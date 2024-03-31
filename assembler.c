@@ -34,7 +34,7 @@ int main(int argc, char *argv[]){
 			printf("\ncannot open file %s, continue with next file.\n\n", *argv);
 			file_exist = FALSE;
 		}
-
+		
 		else if(((input_fp = fopen(file_name, "r")) == NULL) && (argc == 1)){
 			printf("\ncannot open file %s.\n\n", *argv);
 			exit(1);
