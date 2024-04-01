@@ -49,11 +49,50 @@ FILE* store_macro(FILE *input_fp, FILE *output_fp){
 	
 	while(!feof(input_fp)){
 		if(is_macro(line)){
-			printf("store the macro");/*temporary printf*/
+		
+			/*## start storing macro name ##*/
+			macro_arr[mi].macro_name = (char *)malloc(LINE_SIZE);
+			macro_arr[mi].macro_content = (char *)malloc(LINE_SIZE);
+			if(macro_arr[mi].macro_name == NULL || macro_arr[mi].macro_content == NULL){
+				printf("\nmemory allocation failed\n");
+				exit(1);
+			}
+			
+			while(line[li] == ' ' || line[li] == '\t'){/*skipping spaces*/
+				li++;
+			}
+			if(line[li] == '\n' || line[li] == EOF){/*there is no macro*/
+				return FALSE;
+			}
+			/*if the function didn't return FALSE, then that's a word, saving it:*/
+			while(line[li] != ' ' && line[li] != '\t' && line[li] != '\n' && line[li] != EOF){
+				word[wi] = line[li];
+				wi++;
+				li++;
+			}
+			if(strcmp(word, "macro") == 0){/*I want to store macro name not the word macro*/
+				
+				for(wi = 0 ; wi < LINE_SIZE ; wi++){
+					word[wi] = '\0';
+				}
+				wi = 0;
+				
+			}
+			while(line[li] == ' ' || line[li] == '\t'){/*skipping spaces*/
+				li++;
+			}
+			while(line[li] != ' ' && line[li] != '\t' && line[li] != '\n' && line[li] != EOF){
+				word[wi] = line[li];
+				wi++;
+				li++;
+			}
+			strcpy(macro_arr[mi].macro_name, word);
 		}
+		
 		else if(is_macro_name(/*something*/)){
 			printf("put the macro related to this name");/*temporary printf*/
 		}
+		
 		else{
 			fputs(line, output_fp);
 		}
