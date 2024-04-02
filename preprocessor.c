@@ -23,24 +23,22 @@ FILE* store_macro(FILE *input_fp, FILE *output_fp){
 	
 	char *line;
 	char *word; /*in order to read one word if needed, and store macro name*/
-	char *content; /*in order to store macro content*/
 	macro *macro_arr;/*an array of macro name and macro content*/
 	int li;/*li = line index*/
 	int wi;/*wi = word index*/
-	int ci;/*ci = content index*/
 	int mi;/*mi = macro_arr index*/
+	int count;/*for realloc*/
 	
 	li = 0;
 	wi = 0;
-	ci = 0;
 	mi = 0;
+	count = 2; /*to increase memory, so count should be >= 2*/
 	
 	
 	line = calloc(sizeof(int), LINE_SIZE);
 	word = calloc(sizeof(int), LINE_SIZE);
-	content = calloc(sizeof(int), LINE_SIZE);
 	macro_arr = (macro *)calloc(sizeof(macro), 2);
-	if(line == NULL || word == NULL || content == NULL || macro_arr == NULL){
+	if(line == NULL || word == NULL || macro_arr == NULL){
 		printf("\nmemory allocation failed\n");
 		exit(1);
 	}
@@ -48,6 +46,7 @@ FILE* store_macro(FILE *input_fp, FILE *output_fp){
 	fgets(line, LINE_SIZE, input_fp);
 	
 	while(!feof(input_fp)){
+	
 		if(is_macro(line)){
 		
 			/*## start storing macro name ##*/
@@ -87,7 +86,53 @@ FILE* store_macro(FILE *input_fp, FILE *output_fp){
 				li++;
 			}
 			strcpy(macro_arr[mi].macro_name, word);
+			
+			for(wi = 0 ; wi < LINE_SIZE ; wi++){
+				word[wi] = '\0';
+			}
+			wi = 0;
+			
+			/*## end of storing macro name ##*/
+			/*## start storing macro content ##*/
+			
+			li = 0;
+			fgets(line, LINE_SIZE, input_fp);
+			
+			while(strcmp(word, "endmacro") != 0){
+				
+				strcat(macro_arr[mi].macro_content, line);
+				macro_arr[mi].macro_content = (char *)realloc(macro_arr[mi].macro_content, LINE_SIZE * count);
+				if(macro_arr[mi].macro_content == NULL){
+					printf("\nmemory allocation failed\n");
+					exit(1);
+				}
+				count++;
+				
+				fgets(line, LINE_SIZE, input_fp);
+				
+				while(line[li] == ' ' || line[li] == '\t'){/*skipping spaces*/
+					li++;
+				}
+				/*if the function didn't return FALSE, then that's a word, saving it:*/
+				while(line[li] != ' ' && line[li] != '\t' && line[li] != '\n' && line[li] != EOF){
+					word[wi] = line[li];
+					wi++;
+					li++;
+				}
+				
+				wi = 0;
+				li = 0;	
+			}
+			
+			for(wi = 0 ; wi < LINE_SIZE ; wi++){
+				word[wi] = '\0';
+			}
+			wi = 0;
+
+			mi++;
+			/*## end of storing macro content ##*/
 		}
+	
 		
 		else if(is_macro_name(/*something*/)){
 			printf("put the macro related to this name");/*temporary printf*/
@@ -96,15 +141,14 @@ FILE* store_macro(FILE *input_fp, FILE *output_fp){
 		else{
 			fputs(line, output_fp);
 		}
+		
 	}
-	
-	
 	/*currently I don't want to free macro_arr, will see!*/
 	free(line);
 	free(word);
-	free(content);
 	return output_fp;
 }
+
 
 
 
