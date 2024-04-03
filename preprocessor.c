@@ -4,16 +4,21 @@
 #include "defines.h"
 
 
-FILE* store_macro(FILE *input_fp, FILE *output_fp);
-int is_macro(char *line);
-int is_macro_name();
-
 typedef struct macro{
 	
 	char *macro_name;
 	char *macro_content;
 	
-}macro;
+}macro;	
+
+
+
+FILE* store_macro(FILE *input_fp, FILE *output_fp);
+int is_macro(char *line);
+int is_macro_name(char *line, macro *macro_arr);
+void put_macro_content(char *line, macro *macro_arr, FILE *output_fp);
+
+
 
 
 /*This function receives two pointers to files
@@ -134,8 +139,8 @@ FILE* store_macro(FILE *input_fp, FILE *output_fp){
 		}
 	
 		
-		else if(is_macro_name(/*something*/)){
-			printf("put the macro related to this name");/*temporary printf*/
+		else if(is_macro_name(line, macro_arr)){
+			put_macro_content(line, macro_arr, output_fp);/*temporary printf*/
 		}
 		
 		else{
@@ -185,9 +190,81 @@ int is_macro(char *line){
 
 
 
-/*function need to be implemented.
-It checks if the word we are reading from the source file is macro name.*/
-int is_macro_name(){
-	return TRUE;
+
+/*This function checks if the first word in the line "line" is a macro name that
+has been declared and stored previously in "macro_arr"*/
+int is_macro_name(char *line, macro *macro_arr){
+	
+	int li;/*li = line index*/
+	char word[LINE_SIZE];
+	int wi;/*wi = word index*/
+	int mi;
+	li = 0;
+	wi = 0;
+	mi = 0;
+	
+	if(macro_arr == NULL){
+		return FALSE;
+	}
+	
+	while(line[li] == ' ' || line[li] == '\t'){/*skipping spaces*/
+		li++;
+	}
+	if(line[li] == '\n' || line[li] == EOF){/*blank line*/
+		return FALSE;
+	}
+	/*if the function didn't return FALSE, then that's a word, saving it:*/
+	while(line[li] != ' ' && line[li] != '\t' && line[li] != '\n' && line[li] != EOF){
+		word[wi] = line[li];
+		wi++;
+		li++;
+	}
+	word[wi] = '\0';
+	while(macro_arr[mi].macro_name != NULL){
+		if(strcmp(word, macro_arr[mi].macro_name) == 0){/*if the word is macro*/
+			return TRUE;
+		}
+		mi++;
+	}
+	
+	return FALSE;
+	
+}
+
+
+
+
+
+
+/*This function receives one line, the array of macros "macro_arr", and 
+a pointer to after-macro file "output_fp".
+It writes the macro content in output_fp.*/
+void put_macro_content(char *line, macro *macro_arr, FILE *output_fp){
+	
+	int li;/*li = line index*/
+	char word[LINE_SIZE];
+	int wi;/*wi = word index*/
+	int mi;
+	li = 0;
+	wi = 0;
+	mi = 0;
+	
+	while(line[li] == ' ' || line[li] == '\t'){/*skipping spaces*/
+		li++;
+	}
+	
+	while(line[li] != ' ' && line[li] != '\t' && line[li] != '\n' && line[li] != EOF){
+		word[wi] = line[li];
+		wi++;
+		li++;
+	}
+	word[wi] = '\0';
+	while(macro_arr[mi].macro_name != NULL && strcmp(word, macro_arr[mi].macro_name) != 0){
+		mi++;
+	}
+	
+	fputs(macro_arr[mi].macro_content, output_fp);
+	printf("i'm in put_macro_content: %d\n", mi);
+	
 }
 
