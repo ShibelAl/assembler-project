@@ -2,22 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "defines.h"
-
-
-typedef struct macro{
-	
-	char *macro_name;
-	char *macro_content;
-	
-}macro;	
-
-
-
-FILE* store_macro(FILE *input_fp, FILE *output_fp);
-int is_macro(char *line);
-int is_macro_name(char *line, macro *macro_arr);
-void put_macro_content(char *line, macro *macro_arr, FILE *output_fp);
-
+#include "preprocessor.h"
 
 
 
@@ -26,13 +11,10 @@ input_fp contains the cource code, whereas output_fp is the new file after handl
 This function returns a pointer to file (output_fp) that is after macro handling.*/
 FILE* store_macro(FILE *input_fp, FILE *output_fp){
 	
-	char *line;
-	char *word; /*in order to read one word if needed, and store macro name*/
+	char *line, *word;
 	macro *macro_arr;/*an array of macro name and macro content*/
-	int li;/*li = line index*/
-	int wi;/*wi = word index*/
-	int mi;/*mi = macro_arr index*/
-	int count;/*for realloc*/
+	int mi, li, wi, count;
+	/*mi = macro_arr index, li = line index, wi = word index, count is for realloc*/
 	
 	li = 0;
 	wi = 0;
@@ -148,7 +130,6 @@ FILE* store_macro(FILE *input_fp, FILE *output_fp){
 		}
 		
 	}
-	/*currently I don't want to free macro_arr, will see!*/
 	free(line);
 	free(word);
 	return output_fp;
@@ -157,13 +138,14 @@ FILE* store_macro(FILE *input_fp, FILE *output_fp){
 
 
 
+
 /*This function checks if the first word in the line "line" is a macro name that
 has been declared and stored previously in "macro_arr"*/
 int is_macro(char *line){
 	
-	int li;/*li = line index*/
+	int li, wi;/*li = line index, wi = word index*/
 	char word[LINE_SIZE];
-	int wi;/*wi = word index*/
+	
 	li = 0;
 	wi = 0;
 	
@@ -191,14 +173,14 @@ int is_macro(char *line){
 
 
 
+
 /*This function checks if the first word in the line "line" is a macro name that
 has been declared and stored previously in "macro_arr"*/
 int is_macro_name(char *line, macro *macro_arr){
 	
-	int li;/*li = line index*/
+	int li, wi, mi;/*li = line index, wi = word index, mi = macro_arr index*/
 	char word[LINE_SIZE];
-	int wi;/*wi = word index*/
-	int mi;
+	
 	li = 0;
 	wi = 0;
 	mi = 0;
@@ -235,16 +217,14 @@ int is_macro_name(char *line, macro *macro_arr){
 
 
 
-
 /*This function receives one line, the array of macros "macro_arr", and 
 a pointer to after-macro file "output_fp".
 It writes the macro content in output_fp.*/
 void put_macro_content(char *line, macro *macro_arr, FILE *output_fp){
 	
-	int li;/*li = line index*/
+	int li, wi, mi;/*li = line index, wi = word index, mi = macro_arr index*/
 	char word[LINE_SIZE];
-	int wi;/*wi = word index*/
-	int mi;
+	
 	li = 0;
 	wi = 0;
 	mi = 0;
@@ -267,4 +247,5 @@ void put_macro_content(char *line, macro *macro_arr, FILE *output_fp){
 	printf("i'm in put_macro_content: %d\n", mi);
 	
 }
+
 
