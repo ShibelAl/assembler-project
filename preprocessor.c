@@ -120,7 +120,6 @@ FILE* store_macro(FILE *input_fp, FILE *output_fp){
 			/*## end of storing macro content ##*/
 		}
 	
-		
 		else if(is_macro_name(line, macro_arr)){
 			put_macro_content(line, macro_arr, output_fp);/*temporary printf*/
 		}
@@ -129,6 +128,7 @@ FILE* store_macro(FILE *input_fp, FILE *output_fp){
 			fputs(line, output_fp);
 		}
 		
+		fgets(line, LINE_SIZE, input_fp);/*moving to the next line*/
 	}
 	free(line);
 	free(word);
@@ -244,8 +244,6 @@ void put_macro_content(char *line, macro *macro_arr, FILE *output_fp){
 	}
 	
 	fputs(macro_arr[mi].macro_content, output_fp);
-	printf("i'm in put_macro_content: %d\n", mi);
-	
 }
 
 
