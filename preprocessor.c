@@ -6,10 +6,10 @@
 
 
 
+
 /*This function receives two pointers to files
-input_fp contains the cource code, whereas output_fp is the new file after handling the macros.
-This function returns a pointer to file (output_fp) that is after macro handling.*/
-FILE* store_macro(FILE *input_fp, FILE *output_fp){
+input_fp contains the cource code, whereas output_fp is the new file after expanding the macros.*/
+void expand_macro(FILE *input_fp, FILE *output_fp){
 	
 	char *line, *word;
 	macro *macro_arr;/*an array of macro name and macro content*/
@@ -47,9 +47,7 @@ FILE* store_macro(FILE *input_fp, FILE *output_fp){
 			while(line[li] == ' ' || line[li] == '\t'){/*skipping spaces*/
 				li++;
 			}
-			if(line[li] == '\n' || line[li] == EOF){/*there is no macro*/
-				return FALSE;
-			}
+	
 			/*if the function didn't return FALSE, then that's a word, saving it:*/
 			while(line[li] != ' ' && line[li] != '\t' && line[li] != '\n' && line[li] != EOF){
 				word[wi] = line[li];
@@ -132,7 +130,6 @@ FILE* store_macro(FILE *input_fp, FILE *output_fp){
 	}
 	free(line);
 	free(word);
-	return output_fp;
 }
 
 
@@ -152,9 +149,11 @@ int is_macro(char *line){
 	while(line[li] == ' ' || line[li] == '\t'){/*skipping spaces*/
 		li++;
 	}
+	
 	if(line[li] == '\n' || line[li] == EOF){/*there is no macro*/
 		return FALSE;
 	}
+	
 	/*if the function didn't return FALSE, then that's a word, saving it:*/
 	while(line[li] != ' ' && line[li] != '\t' && line[li] != '\n' && line[li] != EOF){
 		word[wi] = line[li];
@@ -162,12 +161,12 @@ int is_macro(char *line){
 		li++;
 	}
 	word[wi] = '\0';
+	
 	if(strcmp(word, "macro") == 0){/*if the word is macro*/
 		return TRUE;
 	}
-	else{
-		return FALSE;
-	}
+	
+	else return FALSE;
 }
 
 
@@ -192,9 +191,11 @@ int is_macro_name(char *line, macro *macro_arr){
 	while(line[li] == ' ' || line[li] == '\t'){/*skipping spaces*/
 		li++;
 	}
+	
 	if(line[li] == '\n' || line[li] == EOF){/*blank line*/
 		return FALSE;
 	}
+	
 	/*if the function didn't return FALSE, then that's a word, saving it:*/
 	while(line[li] != ' ' && line[li] != '\t' && line[li] != '\n' && line[li] != EOF){
 		word[wi] = line[li];
@@ -210,7 +211,6 @@ int is_macro_name(char *line, macro *macro_arr){
 	}
 	
 	return FALSE;
-	
 }
 
 
@@ -239,6 +239,7 @@ void put_macro_content(char *line, macro *macro_arr, FILE *output_fp){
 		li++;
 	}
 	word[wi] = '\0';
+	
 	while(macro_arr[mi].macro_name != NULL && strcmp(word, macro_arr[mi].macro_name) != 0){
 		mi++;
 	}
