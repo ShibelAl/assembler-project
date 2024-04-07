@@ -6,7 +6,7 @@ typedef struct macro{
 }macro; 
 
 
-FILE* store_macro(FILE *input_fp, FILE *output_fp);
+void expand_macro(FILE *input_fp, FILE *output_fp);
 int is_macro(char *line);
 int is_macro_name(char *line, macro *macro_arr);
 void put_macro_content(char *line, macro *macro_arr, FILE *output_fp);
