@@ -5,6 +5,7 @@
 #include "data_structures.h"
 #include "first_pass.h"
 
+char line_type(char *line, int i, int line_num, int *error);
 
 /*opcode opcodes_table[] = {
 
@@ -61,14 +62,15 @@ it passes on the file, saves all the labels in a label table, and saves the addr
 of some, currently I decided to not return anything*/
 void first_pass(FILE *input_fp){
 	
-	char *line, word[LINE_SIZE];
- 	int /*IC, DC,*/ i, wi, line_num;
+	char *line, word[LINE_SIZE], type;
+ 	int /*IC, DC,*/ i, wi, line_num, error;
  	
 	/*IC = 0;
 	DC = 0;*/
 	i = 0; /*index for line*/
 	wi = 0; /*wi = word index*/
 	line_num = 1;
+	error = FALSE; 
   
 	line = (char *)calloc(sizeof(char), LINE_SIZE);
 	if(line == NULL){
@@ -99,11 +101,11 @@ void first_pass(FILE *input_fp){
 			}
 			word[wi] = '\0';
 			wi = 0;
-			i = 0;
 		
 			if(is_label(word)){
-				
 				printf("%d: It's a label!!\n", line_num);
+				type = line_type(line, i, line_num, &error);
+				printf("%c\n", type);
 			}
 			
 			else if(is_command(word)){
@@ -217,9 +219,58 @@ int is_command(char *word){
 
 
 
+/*
+* Parameters:
+* line: current line in the file as array of characters.
+* i: index for traversing line.
+* line_num: number of the current line in the file.
+* error: indicator for error existing in line, error = TRUE if line has an error.
+* 
+* Returns:
+* d: if the current line is a directive statement.
+* i: if the current line is an instruction statement.
+* x: if the current line is neither directive nor instruction statement.
+*/
 
-
-
+char line_type(char *line, int i, int line_num, int *error){
+	
+	char word[LINE_SIZE];
+	int wi;
+	wi = 0;
+	
+	while(line[i] == ' ' || line[i] == '\t'){
+		i++;
+	}
+	
+	while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != EOF){
+		word[wi] = line[i];
+		wi++;
+		i++;
+	}
+	word[wi] = '\0';
+	
+	if(word[0] == '.'){/*if word is a start of a directive statement*/
+		if(strcmp(word, ".data") == 0 || strcmp(word, ".string") == 0 || strcmp(word, ".struct") == 0){
+			return 'd';
+		}
+		
+		else{
+			printf("Error (line %d) - illegal directive statement\n", line_num);
+			*error = TRUE;
+			return 'x';
+		}
+	}
+	
+	else if(is_command(word)){
+		return 'i';
+	}
+	
+	else{/*line can't be neither directive not instruction statement*/
+		printf("Error (line %d) - illegal statement\n", line_num);
+		*error = TRUE;
+		return 'x';
+	} 
+}
 
 
 
