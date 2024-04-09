@@ -1,5 +1,5 @@
-#define OPCODE_LENGTH 31
-
+#define LABEL_LENGTH 31
+#define OPCODE_LENGTH 4
 
 /*#define LINE_SIZE 81
 #define LABEL_LENGTH 31
@@ -19,5 +19,49 @@ typedef struct opcode{
 }opcode;
 
 extern opcode opcodes_table[];
+
+
+
+
+
+
+/*GOAL: when there is a label, this linked list stores the relevant information of it.
+* 
+* Parameters:
+* name: name of the label.
+* address: address of the label.
+* is_external: TRUE if label is declared extern, FALSE otherwise.
+* is_entry: TRUE if label is entry, FALSE otherwise.
+* is_instruction: TRUE if current line is instruction line, FALSE if it's directive.
+*/
+typedef struct label_list{
+  
+  char *name; /*I need to allocate LABEL_LENGTH to each name*/
+  int address; 
+  int is_extern; 
+  int is_entry; 
+  int is_instruction; 
+  struct label_list *next;     
+  
+}labels;
+
+labels* create_label_node(const char *name, int address, int is_extern, int is_entry, int is_instruction);
+void append_label_node(labels **head, labels **current, char *name, int address, int is_extern, int is_entry, int is_instruction);
+void print_label_list(labels* head);
+void free_label_list(labels* head);
+int is_name_in_list(labels* head, char *name);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

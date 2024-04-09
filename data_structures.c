@@ -1,6 +1,9 @@
+#include <stdio.h>
 #include <stdlib.h>
-#include "defines"
+#include <string.h>
+#include "defines.h"
 #include "data_structures.h"
+
 
 
 opcode opcodes_table[] = {
@@ -23,3 +26,106 @@ opcode opcodes_table[] = {
 	{"hlt", "1111", 0, {-1}, {-1}}
 
 };
+
+
+
+
+
+
+/*------------------ Implementing label_list ------------------*/
+
+/* Create a new node with a given name */
+labels* create_label_node(const char *name, int address, int is_extern, int is_entry, int is_instruction) {
+    labels* new_node = (labels*)malloc(sizeof(labels));
+    if(new_node == NULL){
+        printf("Memory allocation failed\n");
+        exit(1);
+    }
+    new_node -> name = (char*)malloc(LABEL_LENGTH);
+    strcpy(new_node -> name, name);
+    if(new_node-> name == NULL){
+        printf("Memory allocation failed\n");
+        free(new_node); /*free the allocated node memory if strdup fails*/
+        exit(1);
+    }
+    new_node -> address = address;
+    new_node -> is_extern = is_extern;
+    new_node -> is_entry = is_entry;
+    new_node -> is_instruction = is_instruction;
+    new_node -> next = NULL;
+    return new_node;
+}
+
+
+/* Appends a new label node to the end of the linked list */
+void append_label_node(labels **head, labels **current, char *name, int address, int is_extern, int is_entry, int is_instruction){
+    if (*head == NULL) {
+        /* if the list is empty, create the first node */
+        *head = create_label_node(name, address, is_extern, is_entry, is_instruction);
+        *current = *head;
+    } 
+    
+    else {
+        /* otherwise, append a new node to the end */
+        (*current) -> next = create_label_node(name, address, is_extern, is_entry, is_instruction);
+        *current = (*current) -> next;
+    }
+}
+
+
+/* Function to print all the labels in the linked list */
+void print_label_list(labels *head){
+    while(head != NULL){
+        printf("Name: %s, Address: %d, is_extern: %d, is_entry: %d, is_instruction: %d\n",
+        	head -> name, head -> address, head -> is_extern, head -> is_entry, head -> is_instruction);
+        head = head -> next;
+	}
+}
+
+
+/* Function to free the memory allocated for the linked list */
+void free_label_list(labels *head){
+    labels* temp;
+    while(head != NULL){
+        temp = head;
+        head = head -> next;
+        free(temp -> name); /* Free the memory allocated for the name */
+        free(temp);
+    }
+}
+
+
+
+/* Check if a name already exists in the linked list */
+int is_name_in_list(labels *head, char *name){
+    while(head != NULL){
+        if(strcmp(head -> name, name) == 0){
+            return TRUE;
+        }
+        head = head -> next;
+    }
+    return FALSE;
+}
+
+
+
+int main(){
+	
+    labels *head, *current;
+    head = NULL;
+    current = NULL;
+    /* Insert some labels into the linked list */
+    append_label_node(&head, &current, "label1", 100, 0, 1, 1);
+    append_label_node(&head, &current, "label2", 101, 1, 0, 0);
+    append_label_node(&head, &current, "label3", 102, 0, 0, 1);
+
+    /* print the labels */
+    printf("Labels in the list:\n");
+    print_label_list(head);
+
+    /* free the memory allocated for the linked list */
+    free_label_list(head);
+
+    return 0;
+}
+
