@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "defines.h"
+/*#include "defines.h"*/
 #include "data_structures.h"
 #include "first_pass.h"
 
-char line_type(char *line, int i, int line_num, int *error);
 
 /*opcode opcodes_table[] = {
 
@@ -62,13 +61,12 @@ it passes on the file, saves all the labels in a label table, and saves the addr
 of some, currently I decided to not return anything*/
 void first_pass(FILE *input_fp){
 	
-	char *line, word[LINE_SIZE], type;
- 	int /*IC, DC,*/ i, wi, line_num, error;
+	char *line;
+ 	int IC, DC, line_num, error;
+
  	
-	/*IC = 0;
-	DC = 0;*/
-	i = 0; /*index for line*/
-	wi = 0; /*wi = word index*/
+	IC = 0; /* Instruction Counter */
+	DC = 0; /* Data Counter */
 	line_num = 1;
 	error = FALSE; 
   
@@ -88,50 +86,96 @@ void first_pass(FILE *input_fp){
 		}
 		
 		else{
-			
-			while(line[i] == ' ' || line[i] == '\t'){/*skipping spaces*/
-				i++;
-			}
-			
-			/*word contains the first word in the line*/
-			while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != EOF){
-				word[wi] = line[i];
-				wi++;
-				i++;
-			}
-			word[wi] = '\0';
-			wi = 0;
-		
-			if(is_label(word)){
-				printf("%d: It's a label!!\n", line_num);
-				type = line_type(line, i, line_num, &error);
-				printf("%c\n", type);
-			}
-			
-			else if(is_command(word)){
-				printf("%d: It's a command!!\n", line_num);
-			}
-			
-			else if(strcmp(word, ".data") == 0){
-				printf("%d: It's .data!!\n", line_num);
-			}
-			
-			else if(strcmp(word, ".string") == 0){
-				printf("%d: It's .string!!\n", line_num);
-			}
-			
-			else if(strcmp(word, ".struct") == 0){
-				printf("%d: It's .struct!!\n", line_num);
-			}
-			
+			line_decode(line, line_num, &error, &DC, &IC);
 		}
 		
 		fgets(line, LINE_SIZE, input_fp);
 		line_num++;
-		i = 0;
 	}
 	
 }
+
+
+
+
+
+void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
+	
+	char type, word[LINE_SIZE];
+	int i, wi; /*wi = word index*/
+	labels *head, *current;
+	
+ 	head = NULL;
+ 	current = NULL;
+ 	i = 0;
+	wi = 0;
+	
+	while(line[i] != '\n' && line[i] != EOF){ /* line decode */
+				
+		while(line[i] == ' ' || line[i] == '\t'){/* skip spaces */
+			i++;
+		}
+	
+		while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != EOF){
+			word[wi] = line[i];
+			wi++;
+			i++;
+		}
+		word[wi] = '\0';
+		wi = 0;
+		
+		printf("------------%s-------------\n", word);
+		
+		if(is_label(word)){
+		printf("%d: It's a label!!\n", line_num);
+			word[strlen(word) - 1] = '\0';/*removing the ':' from the label*/
+			if(is_name_in_list(head, word)){
+				printf("%d:\tError - Multiple declarations of the same label.\n", line_num);
+				*error = TRUE;
+			}
+			type = line_type(line, i, line_num, error);
+			if(type == 'd'){
+				append_label_node(&head, &current, word, *DC, FALSE, FALSE, FALSE);
+			}
+			else if(type == 'i'){
+				append_label_node(&head, &current, word, *IC, FALSE, FALSE, TRUE);
+			}
+			else if(type == 'x'){/*there is an error*/
+				return;
+			}
+		}
+				
+		else if(is_command(word)){
+			printf("%d: It's a command!!\n", line_num);
+		}
+				
+		else if(strcmp(word, ".data") == 0){
+			printf("%d: It's .data!!\n", line_num);
+		}
+				
+		else if(strcmp(word, ".string") == 0){
+			printf("%d: It's .string!!\n", line_num);
+		}
+				
+		else if(strcmp(word, ".struct") == 0){
+			printf("%d: It's .struct!!\n", line_num);
+		}
+		
+		else if(strcmp(word, ".entry") == 0){
+			printf("%d: It's .struct!!\n", line_num);
+		}
+		
+		else if(strcmp(word, ".extern") == 0){
+			printf("%d: It's .struct!!\n", line_num);
+		}
+				
+	}
+			
+}
+
+
+
+
 
 
 
@@ -253,6 +297,10 @@ char line_type(char *line, int i, int line_num, int *error){
 		if(strcmp(word, ".data") == 0 || strcmp(word, ".string") == 0 || strcmp(word, ".struct") == 0){
 			return 'd';
 		}
+		
+		/*if(strcmp(word, ".entry") == 0 || strcmp(word, ".extern") == 0){
+			return 'e';
+		}*/
 		
 		else{
 			printf("Error (line %d) - illegal directive statement\n", line_num);
