@@ -1,41 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-/*#include "defines.h"*/
 #include "data_structures.h"
 #include "first_pass.h"
 
 
-/*opcode opcodes_table[] = {
 
-	{"mov", "0000", 2, {0,1,2,3,-1}, {1,2,3,-1}},
-	{"cmp", "0001", 2, {0,1,2,3,-1}, {0,1,2,3,-1}},
-	{"add", "0010", 2, {0,1,2,3,-1}, {1,2,3,-1}},
-	{"sub", "0011", 2, {0,1,2,3,-1}, {1,2,3,-1}},
-	{"not", "0100", 1, {-1}, {1,2,3,-1}},
-	{"clr", "0101", 1, {-1}, {1,2,3,-1}},
-	{"lea", "0110", 2, {1,2,-1}, {1,2,3,-1}},
-	{"inc", "0111", 1, {-1}, {1,2,3,-1}},
-	{"dec", "1000", 1, {-1}, {1,2,3,-1}},
-	{"jmp", "1001", 1, {-1}, {1,2,3,-1}},
-	{"bne", "1010", 1, {-1}, {1,2,3,-1}},
-	{"get", "1011", 1, {-1}, {1,2,3,-1}},
-	{"prn", "1100", 1, {-1}, {0,1,2,3,-1}},
-	{"jsr", "1101", 1, {-1}, {1,2,3,-1}},
-	{"rts", "1110", 0, {-1}, {-1}},
-	{"hlt", "1111", 0, {-1}, {-1}}
-
-};
-	
-
-
-
-
-
-
-
-
-int main(){
+/*int main(){
 	
 	FILE *input_file;
     input_file = fopen("test_output.am", "r");  
@@ -56,20 +27,20 @@ int main(){
 
 
 
-/*This function receives pointer to the assembly language file after macro handling, 
+/*This function receives pointer to the assembly language file after macro handling,
 it passes on the file, saves all the labels in a label table, and saves the addresses in binary
 of some, currently I decided to not return anything*/
 void first_pass(FILE *input_fp){
 	
 	char *line;
  	int IC, DC, line_num, error;
-
+	
  	
 	IC = 0; /* Instruction Counter */
 	DC = 0; /* Data Counter */
 	line_num = 1;
 	error = FALSE; 
-  
+	  
 	line = (char *)calloc(sizeof(char), LINE_SIZE);
 	if(line == NULL){
 		printf("\nmemory allocation failed\n");
@@ -87,6 +58,9 @@ void first_pass(FILE *input_fp){
 		
 		else{
 			line_decode(line, line_num, &error, &DC, &IC);
+			if(error == TRUE){
+				error = FALSE;
+			}
 		}
 		
 		fgets(line, LINE_SIZE, input_fp);
@@ -97,8 +71,24 @@ void first_pass(FILE *input_fp){
 
 
 
+	
 
 
+
+/*Parameters:
+* line: the current line in the file.
+* line_ num: number of the line in the file.
+* error: flag for error existence, TRUE if there is an error, false otherwise. 
+* DC: stands for Data Counter.
+* IC: stands for Instruction Counter.
+* 
+* Goal:
+* reading every line in a file, and for each line, if it conteins an error, the parameter
+* error turns to TRUE and a dedicated message printed to the user for each error,
+* if everything is ok, it will decide whether the line is a directive or an instruction
+* statement, for each kind, it will send the line to an appropreate function in order to 
+* load the code written in the file, to the memory. 
+*/
 void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
 	
 	char type, word[LINE_SIZE];
@@ -110,13 +100,16 @@ void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
  	i = 0;
 	wi = 0;
 	
+	/*syntax_errors(line, line_num, error);*/
+	/*temporarely, let's assume there isn't any syntax errors..*/
+	
 	while(line[i] != '\n' && line[i] != EOF){ /* line decode */
 				
-		while(line[i] == ' ' || line[i] == '\t'){/* skip spaces */
+		while(line[i] == ' ' || line[i] == '\t' || line[i] == ','){/* skip spaces */
 			i++;
 		}
 	
-		while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != EOF){
+		while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != EOF && line[i] != ','){
 			word[wi] = line[i];
 			wi++;
 			i++;
@@ -127,7 +120,7 @@ void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
 		printf("------------%s-------------\n", word);
 		
 		if(is_label(word)){
-		printf("%d: It's a label!!\n", line_num);
+		/*printf("%d: It's a label!!\n", line_num);*/
 			word[strlen(word) - 1] = '\0';/*removing the ':' from the label*/
 			if(is_name_in_list(head, word)){
 				printf("%d:\tError - Multiple declarations of the same label.\n", line_num);
@@ -139,34 +132,38 @@ void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
 			}
 			else if(type == 'i'){
 				append_label_node(&head, &current, word, *IC, FALSE, FALSE, TRUE);
+				/**IC++;*/
 			}
 			else if(type == 'x'){/*there is an error*/
 				return;
 			}
 		}
-				
+		
 		else if(is_command(word)){
-			printf("%d: It's a command!!\n", line_num);
+			/*printf("%d: It's a command!!\n", line_num);*/
+			store_instruction_line(line, i);
+			
+			
 		}
 				
 		else if(strcmp(word, ".data") == 0){
-			printf("%d: It's .data!!\n", line_num);
+			/*printf("%d: It's .data!!\n", line_num);*/
 		}
 				
 		else if(strcmp(word, ".string") == 0){
-			printf("%d: It's .string!!\n", line_num);
+			/*printf("%d: It's .string!!\n", line_num);*/
 		}
 				
 		else if(strcmp(word, ".struct") == 0){
-			printf("%d: It's .struct!!\n", line_num);
+			/*printf("%d: It's .struct!!\n", line_num);*/
 		}
 		
 		else if(strcmp(word, ".entry") == 0){
-			printf("%d: It's .struct!!\n", line_num);
+			/*printf("%d: It's .struct!!\n", line_num);*/
 		}
 		
 		else if(strcmp(word, ".extern") == 0){
-			printf("%d: It's .struct!!\n", line_num);
+			/*printf("%d: It's .struct!!\n", line_num);*/
 		}
 				
 	}
@@ -174,6 +171,54 @@ void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
 }
 
 
+
+
+
+/*Parameters:
+* line: current line in the file.
+* i: index for traversing line
+* 
+* Goal: 
+* this function reads the line, that was previously known to be an instruction statement,
+* and it stores the number of the command and addresses of some of the operands in binary
+* in a dedicated table called .. (will name it something..)
+*/
+void store_instruction_line(char *line, int i){
+	
+	char word[LINE_SIZE];
+	int wi;
+	
+	wi = 0;
+	
+	while(line[i] == ' ' || line[i] == '\t'){
+		i++;
+	}
+	
+	while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != EOF){
+		word[wi] = line[i];
+		wi++;
+		i++;
+	}
+	word[wi] = '\0';
+	
+	if(word[0] == '#'){/*Immediate addressing*/
+		printf("Immediate addressing\n");
+	}
+	
+	else if(is_register(word)){/*Direct register addressing*/
+		printf("Direct register addressing\n");
+	}
+	
+	else if(operand_is_label(word)){/*Direct addressing*/
+		printf("Direct addressing\n");
+	}
+	
+	else{/*Accessing struct addressing*/
+		printf("Accessing struct addressing\n");
+	}
+	
+	
+}
 
 
 
@@ -319,6 +364,62 @@ char line_type(char *line, int i, int line_num, int *error){
 		return 'x';
 	} 
 }
+
+
+
+
+
+
+/*returns true if the parameter word is a name of a register*/
+int is_register(char *word){
+	
+	int i;
+	
+	for(i = 0 ; i < REGISTER_QTY ; i++){
+		if(strcmp(word, registers_table[i].register_name) == 0){
+			return TRUE;
+			printf("It's a register!!");
+		}
+	}
+	return FALSE;
+}
+
+
+
+
+
+
+
+
+/*returns true if parameter word is a label as an operand in an instruction statement*/
+int operand_is_label(char *word){
+	
+	int wi;/*wi = word index*/
+	
+	if(!is_alphabetic(word[0])){
+		return FALSE;
+	}
+	
+	for(wi = 1 ; word[wi] != '\0' ; wi++){
+		/*if the current character isn't a letter or a number, return false*/
+		if(!is_alphabetic(word[wi]) && (word[wi] < 48 || word[wi] > 57)){
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

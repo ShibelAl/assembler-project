@@ -5,3 +5,6 @@ int is_alphabetic(char character);
 int is_command(char *word);
 char line_type(char *line, int i, int line_num, int *error);
 void line_decode(char *line, int line_num, int *error, int *DC, int *IC);
+void store_instruction_line(char *line, int i);
+int is_register(char *word);
+int operand_is_label(char *word);
