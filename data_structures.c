@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "defines.h"
 #include "data_structures.h"
 
 
@@ -109,23 +108,54 @@ int is_name_in_list(labels *head, char *name){
 
 
 
-int main(){
+
+
+
+
+
+
+
+
+
+/*------------------ Implementing register_table ------------------*/
+
+registers registers_table[] = {
+
+	{"r0", "0000"},
+	{"r1", "0001"},
+	{"r2", "0010"},
+	{"r3", "0011"},
+	{"r4", "0100"},
+	{"r5", "0101"},
+	{"r6", "0110"},
+	{"r7", "0111"} 
+     
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*int main(){
 	
-    labels *head, *current;
-    head = NULL;
-    current = NULL;
-    /* Insert some labels into the linked list */
-    append_label_node(&head, &current, "label1", 100, 0, 1, 1);
-    append_label_node(&head, &current, "label2", 101, 1, 0, 0);
-    append_label_node(&head, &current, "label3", 102, 0, 0, 1);
-
-    /* print the labels */
-    printf("Labels in the list:\n");
-    print_label_list(head);
-
-    /* free the memory allocated for the linked list */
-    free_label_list(head);
+	
 
     return 0;
-}
+}*/
 

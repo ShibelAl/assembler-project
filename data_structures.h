@@ -1,9 +1,4 @@
-#define LABEL_LENGTH 31
-#define OPCODE_LENGTH 4
-
-/*#define LINE_SIZE 81
-#define LABEL_LENGTH 31
-#define OPCODE_LENGTH 4*/
+#include "defines.h"
 
 
 /* For storing opcode specifications.
@@ -19,9 +14,6 @@ typedef struct opcode{
 }opcode;
 
 extern opcode opcodes_table[];
-
-
-
 
 
 
@@ -50,6 +42,21 @@ void append_label_node(labels **head, labels **current, char *name, int address,
 void print_label_list(labels* head);
 void free_label_list(labels* head);
 int is_name_in_list(labels* head, char *name);
+
+
+
+/*GOAL: storing registers names and their number in binary.
+* NOTE: the binary expression consists of 4 elements even tough we have only 8 
+* registers, and that's the project instructions.
+*/
+typedef struct registers{
+
+ 	char register_name[3];
+	char num_of_register[5];
+  
+}registers;
+
+extern registers registers_table[];
 
 
 
