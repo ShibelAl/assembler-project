@@ -30,6 +30,16 @@ opcode opcodes_table[] = {
 
 
 
+base32 base32_numbers = {{
+	'!', '@', '#', '$', '%', '^', '&', '*',
+	'<', '>', 'a', 'b', 'c', 'd', 'e', 'f',
+	'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+	'o', 'p', 'q', 'r', 's', 't', 'u', 'v'
+}};
+
+
+
+
 
 /*------------------ Implementing label_list ------------------*/
 
@@ -80,6 +90,8 @@ void print_label_list(labels *head){
         head = head -> next;
 	}
 }
+
+
 
 
 /* Function to free the memory allocated for the linked list */

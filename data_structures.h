@@ -62,6 +62,64 @@ extern registers registers_table[];
 
 
 
+/*
+* Base 32 of numbers as given in the project instructions. 
+*/
+typedef struct base32{
+	
+	char elements[32];
+	
+}base32;
+
+extern base32 base32_numbers;
+
+
+
+
+
+/*GOAL: saving the address of each word in the memory.
+* first, save the decimal_address of the word that comes from the IC and DC 
+* (Instruction Counter and Data Counter), and then convert it to base 32 that is given
+* in the project instructions 
+*/
+/*typedef struct addresses{
+	
+	char *base32_address;
+	char *binary_address;
+	struct addresses *next;
+	
+}addresses;
+
+extern addresses address;
+*/
+
+
+
+/*GOAL: this is what will be printed in the end of the program.
+* the first column is the addresses of the words
+* the second column is the actual code that the computer has to execute.
+*/
+typedef struct address_code_table{
+	
+	base32 address;
+	base32 code;
+	
+}machine_instructions;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
