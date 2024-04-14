@@ -101,14 +101,15 @@ void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
 	wi = 0;
 	
 	/*syntax_errors(line, line_num, error);*/
-	/*temporarely, let's assume there isn't any syntax errors..*/
+	/*temporarely, for now let's assume there isn't any syntax errors..*/
 	
 	while(line[i] != '\n' && line[i] != EOF){ /* line decode */
 				
 		while(line[i] == ' ' || line[i] == '\t' || line[i] == ','){/* skip spaces */
 			i++;
 		}
-	
+		
+		/*take the first word of the line*/
 		while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != EOF && line[i] != ','){
 			word[wi] = line[i];
 			wi++;
@@ -141,7 +142,7 @@ void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
 		
 		else if(is_command(word)){
 			/*printf("%d: It's a command!!\n", line_num);*/
-			store_instruction_line(line, i);
+			store_instruction_line(line/*, i*/);
 			
 			
 		}
@@ -176,19 +177,23 @@ void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
 
 /*Parameters:
 * line: current line in the file.
-* i: index for traversing line
+* i: index for traversing line.
 * 
 * Goal: 
 * this function reads the line, that was previously known to be an instruction statement,
 * and it stores the number of the command and addresses of some of the operands in binary
 * in a dedicated table called .. (will name it something..)
 */
-void store_instruction_line(char *line, int i){
+void store_instruction_line(char *line/*, int i*/){
 	
 	char word[LINE_SIZE];
-	int wi;
-	
+	/*char binary_code[11];*/ /*a word in the memory is stored via 10 bits*/
+	int wi, i;
 	wi = 0;
+	i = 0;
+	
+	store_line_opcode(line);
+	
 	
 	while(line[i] == ' ' || line[i] == '\t'){
 		i++;
@@ -202,6 +207,7 @@ void store_instruction_line(char *line, int i){
 	word[wi] = '\0';
 	
 	if(word[0] == '#'){/*Immediate addressing*/
+		/*strcat(binary_code, );*/
 		printf("Immediate addressing\n");
 	}
 	
@@ -217,11 +223,45 @@ void store_instruction_line(char *line, int i){
 		printf("Accessing struct addressing\n");
 	}
 	
-	
 }
 
 
 
+
+
+
+/*
+* this function stores opcode of the current line. 
+* I use this function only for storing the command binary code, 
+* source and destination addressing type, and the A,R,E field.
+*/
+void store_line_opcode(char *line){
+	
+	char word[LINE_SIZE];
+	int wi, li, oi;
+	wi = 0;/*wi = word index*/
+	li = 0;/*li = line index*/
+	oi = 0;/*oi = opcodes table index*/
+	
+	while(line[li] == ' ' || line[li] == '\t'){
+		li++;
+	}
+	
+	while(line[li] != ' ' && line[li] != '\t' && line[li] != '\n' && line[li] != EOF){
+		word[wi] = line[li];
+		wi++;
+		li++;
+	}
+	word[wi] = '\0';
+	
+	for(oi = 0 ; oi < COMMAND_QTY ; oi++){
+		if(strcmp(word, opcodes_table[oi].command) == 0){
+			
+		}
+	}
+	
+		
+}
 
 
 
@@ -289,6 +329,7 @@ int is_alphabetic(char character){
 
 
 
+
 /*returns true if parameter word is a command from the 16 commands
 of the language, false otherwise*/
 int is_command(char *word){
@@ -303,6 +344,7 @@ int is_command(char *word){
 	}
 	return FALSE;
 }
+
 
 
 
@@ -389,8 +431,6 @@ int is_register(char *word){
 
 
 
-
-
 /*returns true if parameter word is a label as an operand in an instruction statement*/
 int operand_is_label(char *word){
 	
@@ -415,18 +455,82 @@ int operand_is_label(char *word){
 
 
 
+/*Parameters:
+* decimal: integer number.
+* 
+* Returns:
+* the number decimal in base 32.
+*/
+char *decimal_to_base32(int decimal){
+	
+	int index, i, j;/* i, j is for reversing a string */
+    char *base32_representation, temp;
+    char base32_symbols[] = "!@#$%^&*<>abcdefghijklmnopqrstuv";
+    
+    base32_representation = (char *)malloc(MAX_DIGITS * sizeof(char));
+    if(base32_representation == NULL){
+        printf("Memory allocation failed\n");
+        exit(1);
+    }
+
+    do{
+        base32_representation[index] = base32_symbols[decimal % 32];
+        decimal /= 32;
+        index++;
+    } while(decimal != 0);
+    base32_representation[index] = '\0';
+
+    /* Reverse the string */
+    for (i = 0, j = index - 1; i < j; i++, j--){
+        temp = base32_representation[i];
+        base32_representation[i] = base32_representation[j];
+        base32_representation[j] = temp;
+    }
+
+    return base32_representation;
+}
 
 
 
 
 
 
+/*Parameters:
+* binary_str: a string that represents a binary number.
+* 
+* Returns:
+* the binary number in base 32.
+*/
+char *binary_to_base32(char *binary_str){
 
+    char *base32_representation, binary_segment[6];
+	char base32_symbols[] = "!@#$%^&*<>abcdefghijklmnopqrstuv";
+	int index, i, decimal;
+	
+	base32_representation = (char *)malloc(MAX_DIGITS * sizeof(char));
+    if (base32_representation == NULL){
+		printf("Memory allocation failed\n");
+        return NULL;
+	}
+	
+	index = 0;
+	
+    for (i = 0; i < BINARY_LENGTH; i += 5){
+         /* Extract 4-digit binary segment */
+        strncpy(binary_segment, binary_str + i, 5);
+        binary_segment[6] = '\0'; 
 
+        /* Convert binary segment to decimal */
+        decimal = strtol(binary_segment, NULL, 2);
 
-
-
-
+        /* Map decimal to corresponding base32 symbol */
+        base32_representation[index] = base32_symbols[decimal];
+        index++;
+    }
+    base32_representation[index] = '\0';
+    
+    return base32_representation;
+}
 
 
 
