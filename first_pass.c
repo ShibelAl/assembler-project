@@ -33,16 +33,22 @@ of some, currently I decided to not return anything*/
 void first_pass(FILE *input_fp){
 	
 	char *line;
- 	int IC, DC, line_num, error;
+ 	int IC, DC, line_num, error, mi;
+ 	machine_code *machine_code_arr;
 	
  	
-	IC = 0; /* Instruction Counter */
+	IC = 100; /* Instruction Counter */
 	DC = 0; /* Data Counter */
 	line_num = 1;
+	mi = 0; /*mi = machine_code_array index*/
 	error = FALSE; 
+	
+	
 	  
 	line = (char *)calloc(sizeof(char), LINE_SIZE);
-	if(line == NULL){
+	machine_code_arr = (machine_code *)calloc(sizeof(machine_code), 2);/*each element in this array has two fields:
+ 	address, and the instruction/data*/
+	if(line == NULL || machine_code_arr == NULL){
 		printf("\nmemory allocation failed\n");
 		exit(1);
 	}
@@ -57,7 +63,15 @@ void first_pass(FILE *input_fp){
 		}
 		
 		else{
-			line_decode(line, line_num, &error, &DC, &IC);
+			/*memory allocation for the current element*/
+			machine_code_arr[mi].address = (char *)malloc(MAX_DIGITS);
+			machine_code_arr[mi].code = (char *)malloc(MAX_DIGITS);
+			if(machine_code_arr[mi].address == NULL || machine_code_arr[mi].code == NULL){
+				printf("\nmemory allocation failed\n");
+				exit(1);
+			}
+			line_decode(line, line_num, machine_code_arr, mi, &error, &DC, &IC);
+			mi++;
 			if(error == TRUE){
 				error = FALSE;
 			}
@@ -66,6 +80,8 @@ void first_pass(FILE *input_fp){
 		fgets(line, LINE_SIZE, input_fp);
 		line_num++;
 	}
+	
+	printf("\n");
 	
 }
 
@@ -89,7 +105,7 @@ void first_pass(FILE *input_fp){
 * statement, for each kind, it will send the line to an appropreate function in order to 
 * load the code written in the file, to the memory. 
 */
-void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
+void line_decode(char *line, int line_num, machine_code *machine_code_arr, int mi, int *error, int *DC, int *IC){
 	
 	char type, word[LINE_SIZE];
 	int i, wi; /*wi = word index*/
@@ -103,8 +119,8 @@ void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
 	/*syntax_errors(line, line_num, error);*/
 	/*temporarely, for now let's assume there isn't any syntax errors..*/
 	
-	while(line[i] != '\n' && line[i] != EOF){ /* line decode */
-				
+	while(line[i] != '\n' && line[i] != EOF){
+		
 		while(line[i] == ' ' || line[i] == '\t' || line[i] == ','){/* skip spaces */
 			i++;
 		}
@@ -118,7 +134,8 @@ void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
 		word[wi] = '\0';
 		wi = 0;
 		
-		printf("------------%s-------------\n", word);
+		printf("%s ", word);
+		printf("we are at %d \n", mi);
 		
 		if(is_label(word)){
 		/*printf("%d: It's a label!!\n", line_num);*/
@@ -142,11 +159,12 @@ void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
 		
 		else if(is_command(word)){
 			/*printf("%d: It's a command!!\n", line_num);*/
-			store_instruction_line(line/*, i*/);
-			
+			store_instruction_line(line, i, machine_code_arr, mi, word, IC);
+			*IC++;
+			break;
 			
 		}
-				
+		
 		else if(strcmp(word, ".data") == 0){
 			/*printf("%d: It's .data!!\n", line_num);*/
 		}
@@ -183,46 +201,115 @@ void line_decode(char *line, int line_num, int *error, int *DC, int *IC){
 * this function reads the line, that was previously known to be an instruction statement,
 * and it stores the number of the command and addresses of some of the operands in binary
 * in a dedicated table called .. (will name it something..)
+* 
+* NOTE: the parameter i starts after reading the command, so the function receives the command as parameter.
 */
-void store_instruction_line(char *line/*, int i*/){
+void store_instruction_line(char *line, int i, machine_code *machine_code_arr, int mi, char *command, int *IC){
 	
 	char word[LINE_SIZE];
-	/*char binary_code[11];*/ /*a word in the memory is stored via 10 bits*/
-	int wi, i;
-	wi = 0;
-	i = 0;
+	char opcode[11];
+	char addressing_method[5];/*for storing addressing method binary codes*/
+	char *decimal_base32, *binary_base32;
+	int wi, oi/*, temp_ic*/;
+	int ai;
+	wi = 0; /*wi = word index*/
+	oi = 0; /*oi = opcodes table index.*/
+	ai = 0;
+	/*temp_ic = *IC;*//*to save the location IC in the memory*/
 	
-	store_line_opcode(line);
+
 	
-	
-	while(line[i] == ' ' || line[i] == '\t'){
-		i++;
+	/*saving the command binary code*/
+	for(; oi < COMMAND_QTY ; oi++){
+		if(strcmp(command, opcodes_table[oi].command) == 0){
+			decimal_base32 = decimal_to_base32(*IC);
+			strcpy(machine_code_arr[mi].address, decimal_base32);
+			free(decimal_base32);
+			/**IC++;*/
+			strcpy(opcode, opcodes_table[oi].in_binary);/*--put the first 4 bits in the opcode--*/
+			/*printf("1 %s ", opcode);*/
+		}
 	}
 	
-	while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != EOF){
-		word[wi] = line[i];
-		wi++;
-		i++;
-	}
-	word[wi] = '\0';
+	while(line[i] != '\n' && line[i] != EOF){
+		
+		while(line[i] == ' ' || line[i] == '\t' || line[i] == ','){/*skip spaces*/
+			i++;
+		}
+		
+		/*take the next word*/
+		while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != ',' && line[i] != EOF){
+			word[wi] = line[i];
+			wi++;
+			i++;
+		}
+		word[wi] = '\0';
+		wi = 0;
+		
+		printf("%s ", word);
 	
-	if(word[0] == '#'){/*Immediate addressing*/
-		/*strcat(binary_code, );*/
-		printf("Immediate addressing\n");
+		/*I arranged these if statements like that for a reason
+		(for the similarity between the direct addressing and accessing struct addressing)*/
+		if(word[0] == '#'){/*Immediate addressing*/
+			strcat(addressing_method, "00");/*00 is the binary code for immediate addressing*/
+			
+			/*strcat(opcode, "00"); */
+			printf("Immediate addressing  ");
+		}
+		
+		else if(is_register(word)){/*Direct register addressing*/
+			
+			strcat(addressing_method, "11");/*11 is the binary code for register addressing*/
+			/*strcat(opcode, "11"); */
+			printf("Direct register addressing  ");
+		}
+		
+		else if(operand_is_label(word)){/*Direct addressing*/
+			strcat(addressing_method, "01");/*01 is the binary code for direct addressing*/
+			/*strcat(opcode, "01"); */
+			printf("Direct addressing  ");
+		}
+		
+		else{/*Accessing struct addressing*/
+			strcat(addressing_method, "10");/*10 is the binary code for accessing struct addressing*/
+			/*strcat(opcode, "10"); */
+			printf("Accessing struct addressing  ");
+		}
+		
+	}
+	/*because if there is only one operand, the addressing code will be 00 and something*/
+	if(strlen(addressing_method) == 2){
+		strcat(opcode, "00");
+		strcat(opcode, addressing_method);
+	}
+	else{
+		strcat(opcode, addressing_method);
 	}
 	
-	else if(is_register(word)){/*Direct register addressing*/
-		printf("Direct register addressing\n");
-	}
 	
-	else if(operand_is_label(word)){/*Direct addressing*/
-		printf("Direct addressing\n");
-	}
 	
-	else{/*Accessing struct addressing*/
-		printf("Accessing struct addressing\n");
-	}
+	/*the A.R.E field is 00 when it's an instruction line*/
+	strcat(opcode, "00");
+	printf("%s ", opcode);
+	binary_base32 = binary_to_base32(opcode);
+	strcpy(machine_code_arr[mi].code, binary_base32);
 	
+	free(decimal_base32);
+	
+	printf("\n");
+	printf("%s\n", machine_code_arr[mi].address);
+	printf("%s\n", machine_code_arr[mi].code);
+	
+	while(ai < 6){
+		addressing_method[ai] = '\0';
+		ai++;
+	}
+	ai = 0;
+	while(ai < 12){
+		opcode[ai] = '\0';
+		ai++;
+	}
+	ai = 0;
 }
 
 
@@ -235,7 +322,7 @@ void store_instruction_line(char *line/*, int i*/){
 * I use this function only for storing the command binary code, 
 * source and destination addressing type, and the A,R,E field.
 */
-void store_line_opcode(char *line){
+void store_line_opcode(char *line, int *IC){
 	
 	char word[LINE_SIZE];
 	int wi, li, oi;
@@ -256,11 +343,9 @@ void store_line_opcode(char *line){
 	
 	for(oi = 0 ; oi < COMMAND_QTY ; oi++){
 		if(strcmp(word, opcodes_table[oi].command) == 0){
-			
+			printf("i'm in store_line_opcode\n");
 		}
-	}
-	
-		
+	}		
 }
 
 
@@ -420,7 +505,6 @@ int is_register(char *word){
 	for(i = 0 ; i < REGISTER_QTY ; i++){
 		if(strcmp(word, registers_table[i].register_name) == 0){
 			return TRUE;
-			printf("It's a register!!");
 		}
 	}
 	return FALSE;
@@ -472,6 +556,8 @@ char *decimal_to_base32(int decimal){
         printf("Memory allocation failed\n");
         exit(1);
     }
+    
+    index = 0;
 
     do{
         base32_representation[index] = base32_symbols[decimal % 32];
@@ -500,6 +586,9 @@ char *decimal_to_base32(int decimal){
 * 
 * Returns:
 * the binary number in base 32.
+* 
+* Note: the length of binary_string is always 10 because I only use this function  
+* for switching a 10 bits in binary to 2 digits in base 32.
 */
 char *binary_to_base32(char *binary_str){
 
