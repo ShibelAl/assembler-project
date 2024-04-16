@@ -101,10 +101,10 @@ extern addresses address;
 */
 typedef struct address_code_table{
 	
-	base32 address;
-	base32 code;
+	char *address;
+	char *code;
 	
-}machine_instructions;
+}machine_code;
 
 
 
