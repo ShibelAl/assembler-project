@@ -44,9 +44,9 @@ void first_pass(FILE *input_fp){
 	error = FALSE; 
 	
 	
-	  
+	
 	line = (char *)calloc(sizeof(char), LINE_SIZE);
-	machine_code_arr = (machine_code *)calloc(sizeof(machine_code), 2);/*each element in this array has two fields:
+	machine_code_arr = (machine_code *)calloc(MAX_DIGITS * TWO_FIELDS, RAM_SIZE);/*each element in this array has two fields:
  	address, and the instruction/data*/
 	if(line == NULL || machine_code_arr == NULL){
 		printf("\nmemory allocation failed\n");
@@ -57,31 +57,27 @@ void first_pass(FILE *input_fp){
 	
 	while(!feof(input_fp)){
 		
-		if(is_empty_line(line) || line[0] == ';'){/*if line is empty or it's a comment*/
-			fgets(line, LINE_SIZE, input_fp);
-			line_num++;
-		}
-		
-		else{
+		if(!is_empty_line(line) && line[0] != ';'){/*if line is not empty nor it's a comment*/
 			/*memory allocation for the current element*/
-			machine_code_arr[mi].address = (char *)malloc(MAX_DIGITS);
-			machine_code_arr[mi].code = (char *)malloc(MAX_DIGITS);
+			machine_code_arr[mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);/*41*/
+			machine_code_arr[mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
 			if(machine_code_arr[mi].address == NULL || machine_code_arr[mi].code == NULL){
 				printf("\nmemory allocation failed\n");
 				exit(1);
 			}
+			
 			line_decode(line, line_num, machine_code_arr, mi, &error, &DC, &IC);
 			mi++;
 			if(error == TRUE){
+			printf("\nError!!\n");
 				error = FALSE;
 			}
+		
 		}
 		
 		fgets(line, LINE_SIZE, input_fp);
 		line_num++;
 	}
-	
-	printf("\n");
 	
 }
 
@@ -116,6 +112,7 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int m
  	i = 0;
 	wi = 0;
 	
+	
 	/*syntax_errors(line, line_num, error);*/
 	/*temporarely, for now let's assume there isn't any syntax errors..*/
 	
@@ -134,11 +131,12 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int m
 		word[wi] = '\0';
 		wi = 0;
 		
-		printf("%s ", word);
-		printf("we are at %d \n", mi);
+		/*printf("%s ", word);*/
+		/*printf("we are at %d \n", mi);*/
 		
 		if(is_label(word)){
-		/*printf("%d: It's a label!!\n", line_num);*/
+			
+			/*printf("%d: It's a label!!\n", line_num);*/
 			word[strlen(word) - 1] = '\0';/*removing the ':' from the label*/
 			if(is_name_in_list(head, word)){
 				printf("%d:\tError - Multiple declarations of the same label.\n", line_num);
@@ -160,7 +158,7 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int m
 		else if(is_command(word)){
 			/*printf("%d: It's a command!!\n", line_num);*/
 			store_instruction_line(line, i, machine_code_arr, mi, word, IC);
-			*IC++;
+			/**IC++;*/
 			break;
 			
 		}
@@ -217,19 +215,26 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	ai = 0;
 	/*temp_ic = *IC;*//*to save the location IC in the memory*/
 	
-
+	/*printf("%s \n", command);
+	printf("we are at %d \n", mi);	*/
 	
 	/*saving the command binary code*/
 	for(; oi < COMMAND_QTY ; oi++){
 		if(strcmp(command, opcodes_table[oi].command) == 0){
+		
 			decimal_base32 = decimal_to_base32(*IC);
+			
+			/*machine_code_arr[mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);*/
 			strcpy(machine_code_arr[mi].address, decimal_base32);
+			
 			free(decimal_base32);
-			/**IC++;*/
+			*IC = *IC + 1;
 			strcpy(opcode, opcodes_table[oi].in_binary);/*--put the first 4 bits in the opcode--*/
 			/*printf("1 %s ", opcode);*/
 		}
 	}
+	
+	
 	
 	while(line[i] != '\n' && line[i] != EOF){
 		
@@ -246,34 +251,34 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 		word[wi] = '\0';
 		wi = 0;
 		
-		printf("%s ", word);
+		/*printf("%s ", word);*/
 	
 		/*I arranged these if statements like that for a reason
 		(for the similarity between the direct addressing and accessing struct addressing)*/
 		if(word[0] == '#'){/*Immediate addressing*/
 			strcat(addressing_method, "00");/*00 is the binary code for immediate addressing*/
 			
-			/*strcat(opcode, "00"); */
-			printf("Immediate addressing  ");
+			/*strcat(opcode, "00");*/ 
+			/*printf("Immediate addressing  ");*/
 		}
 		
 		else if(is_register(word)){/*Direct register addressing*/
 			
 			strcat(addressing_method, "11");/*11 is the binary code for register addressing*/
 			/*strcat(opcode, "11"); */
-			printf("Direct register addressing  ");
+			/*printf("Direct register addressing  ");*/
 		}
 		
 		else if(operand_is_label(word)){/*Direct addressing*/
 			strcat(addressing_method, "01");/*01 is the binary code for direct addressing*/
 			/*strcat(opcode, "01"); */
-			printf("Direct addressing  ");
+			/*printf("Direct addressing  ");*/
 		}
 		
 		else{/*Accessing struct addressing*/
 			strcat(addressing_method, "10");/*10 is the binary code for accessing struct addressing*/
-			/*strcat(opcode, "10"); */
-			printf("Accessing struct addressing  ");
+			/*strcat(opcode, "10");*/ 
+			/*printf("Accessing struct addressing  ");*/
 		}
 		
 	}
@@ -283,7 +288,12 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 		strcat(opcode, addressing_method);
 	}
 	else{
-		strcat(opcode, addressing_method);
+		/*printf("bbyyeeeee %ld\n", strlen(addressing_method));
+		printf("bbyyeeeee!!!\n");*/
+		if(strlen(addressing_method) == 0){
+			strcat(opcode, "0000");
+		}
+		else strcat(opcode, addressing_method);
 	}
 	
 	
@@ -294,11 +304,10 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	binary_base32 = binary_to_base32(opcode);
 	strcpy(machine_code_arr[mi].code, binary_base32);
 	
-	free(decimal_base32);
+	free(binary_base32);
 	
+	printf("%s %s\n", machine_code_arr[mi].address, machine_code_arr[mi].code);
 	printf("\n");
-	printf("%s\n", machine_code_arr[mi].address);
-	printf("%s\n", machine_code_arr[mi].code);
 	
 	while(ai < 6){
 		addressing_method[ai] = '\0';
@@ -604,10 +613,10 @@ char *binary_to_base32(char *binary_str){
 	
 	index = 0;
 	
-    for (i = 0; i < BINARY_LENGTH; i += 5){
-         /* Extract 4-digit binary segment */
+    for (i = 0; i < BINARY_LENGTH - 1; i += 5){/*BINARY_LENGTH - 1, because the actual length is 10, the 1 is for the null terminator*/
+         /* Extract 5-digit binary segment */
         strncpy(binary_segment, binary_str + i, 5);
-        binary_segment[6] = '\0'; 
+        binary_segment[5] = '\0'; 
 
         /* Convert binary segment to decimal */
         decimal = strtol(binary_segment, NULL, 2);
@@ -620,10 +629,5 @@ char *binary_to_base32(char *binary_str){
     
     return base32_representation;
 }
-
-
-
-
-
 
 
