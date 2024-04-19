@@ -5,7 +5,11 @@
 #define REGISTER_QTY 8 /*number of registers in the given computer*/
 #define MAX_DIGITS 4 /* Max length of base32 representation of the decimal number, 
 3 characters for the number + 1 for null terminator */
-#define BINARY_LENGTH 11
+#define BINARY_LENGTH 11 /*actual length is 10 bits + 1 for null terminator*/
+#define MI_LENGTH 11 /*MI = MACHINE INSTRUCTION. actual length is 10 bits + 1 for null terminator*/
+#define TWO_FIELDS 2 /*the two fields are memory address, and data/instruction. in the ram.*/
+#define RAM_SIZE 256 /*according to the maman, the ram in the virtual computer has 256 cells*/
+
 
 enum boolean{FALSE, TRUE};
 
