@@ -135,22 +135,21 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int m
 		/*printf("we are at %d \n", mi);*/
 		
 		if(is_label(word)){
-			
-			/*printf("%d: It's a label!!\n", line_num);*/
+	
 			word[strlen(word) - 1] = '\0';/*removing the ':' from the label*/
 			if(is_name_in_list(head, word)){
 				printf("%d:\tError - Multiple declarations of the same label.\n", line_num);
 				*error = TRUE;
 			}
 			type = line_type(line, i, line_num, error);
-			if(type == 'd'){
+			if(type == 'd'){/*if the current line is a directive statement.*/
 				append_label_node(&head, &current, word, *DC, FALSE, FALSE, FALSE);
 			}
-			else if(type == 'i'){
+			else if(type == 'i'){/*if the current line is an instruction statement.*/
 				append_label_node(&head, &current, word, *IC, FALSE, FALSE, TRUE);
-				/**IC++;*/
 			}
 			else if(type == 'x'){/*there is an error*/
+				*error = TRUE;
 				return;
 			}
 		}
@@ -160,7 +159,6 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int m
 			store_instruction_line(line, i, machine_code_arr, mi, word, IC);
 			/**IC++;*/
 			break;
-			
 		}
 		
 		else if(strcmp(word, ".data") == 0){
@@ -182,7 +180,12 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int m
 		else if(strcmp(word, ".extern") == 0){
 			/*printf("%d: It's .struct!!\n", line_num);*/
 		}
-				
+		
+		while(wi < LINE_SIZE && word[wi] != '\0'){/*delete word*/
+			word[wi] = '\0';
+		}
+		wi = 0;
+		
 	}
 			
 }
@@ -208,29 +211,23 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	char opcode[11];
 	char addressing_method[5];/*for storing addressing method binary codes*/
 	char *decimal_base32, *binary_base32;
-	int wi, oi/*, temp_ic*/;
+	int wi, oi, has_register;
 	int ai;
 	wi = 0; /*wi = word index*/
 	oi = 0; /*oi = opcodes table index.*/
 	ai = 0;
-	/*temp_ic = *IC;*//*to save the location IC in the memory*/
-	
-	/*printf("%s \n", command);
-	printf("we are at %d \n", mi);	*/
+	has_register = FALSE;/*I made this flag because if the statement has a 
+	command and two registers, IC doesn't increase for the second register*/
 	
 	/*saving the command binary code*/
 	for(; oi < COMMAND_QTY ; oi++){
 		if(strcmp(command, opcodes_table[oi].command) == 0){
 		
 			decimal_base32 = decimal_to_base32(*IC);
-			
-			/*machine_code_arr[mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);*/
-			strcpy(machine_code_arr[mi].address, decimal_base32);
-			
+			strcpy(machine_code_arr[mi].address, decimal_base32);		
 			free(decimal_base32);
 			*IC = *IC + 1;
 			strcpy(opcode, opcodes_table[oi].in_binary);/*--put the first 4 bits in the opcode--*/
-			/*printf("1 %s ", opcode);*/
 		}
 	}
 	
@@ -251,33 +248,34 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 		word[wi] = '\0';
 		wi = 0;
 		
-		/*printf("%s ", word);*/
+		*IC = *IC + 1;/*new instruction operand, so new IC.*/
 	
 		/*I arranged these if statements like that for a reason
 		(for the similarity between the direct addressing and accessing struct addressing)*/
 		if(word[0] == '#'){/*Immediate addressing*/
 			strcat(addressing_method, "00");/*00 is the binary code for immediate addressing*/
-			
-			/*strcat(opcode, "00");*/ 
 			/*printf("Immediate addressing  ");*/
 		}
 		
 		else if(is_register(word)){/*Direct register addressing*/
 			
 			strcat(addressing_method, "11");/*11 is the binary code for register addressing*/
-			/*strcat(opcode, "11"); */
+			if(has_register){
+				*IC = *IC - 1;/*to prevent increasing the IC for both registers*/
+				has_register = FALSE;/*I passed two registers, now reset the flag.*/
+			}
+			has_register = TRUE;
 			/*printf("Direct register addressing  ");*/
 		}
 		
 		else if(operand_is_label(word)){/*Direct addressing*/
 			strcat(addressing_method, "01");/*01 is the binary code for direct addressing*/
-			/*strcat(opcode, "01"); */
 			/*printf("Direct addressing  ");*/
 		}
 		
 		else{/*Accessing struct addressing*/
 			strcat(addressing_method, "10");/*10 is the binary code for accessing struct addressing*/
-			/*strcat(opcode, "10");*/ 
+			*IC = *IC + 1;/*to access the struct field*/
 			/*printf("Accessing struct addressing  ");*/
 		}
 		
@@ -287,28 +285,23 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 		strcat(opcode, "00");
 		strcat(opcode, addressing_method);
 	}
-	else{
-		/*printf("bbyyeeeee %ld\n", strlen(addressing_method));
-		printf("bbyyeeeee!!!\n");*/
-		if(strlen(addressing_method) == 0){
-			strcat(opcode, "0000");
-		}
-		else strcat(opcode, addressing_method);
-	}
-	
-	
+	else if(strlen(addressing_method) == 0){
+		strcat(opcode, "0000");
+	}	
+	else strcat(opcode, addressing_method);
 	
 	/*the A.R.E field is 00 when it's an instruction line*/
 	strcat(opcode, "00");
-	printf("%s ", opcode);
+	
+	/*printf("%s ", opcode);*/
 	binary_base32 = binary_to_base32(opcode);
 	strcpy(machine_code_arr[mi].code, binary_base32);
 	
 	free(binary_base32);
 	
-	printf("%s %s\n", machine_code_arr[mi].address, machine_code_arr[mi].code);
-	printf("\n");
+	printf("%s %s\n\n", machine_code_arr[mi].address, machine_code_arr[mi].code);
 	
+	/*reset addressing_method and opcode*/
 	while(ai < 6){
 		addressing_method[ai] = '\0';
 		ai++;
@@ -354,7 +347,7 @@ void store_line_opcode(char *line, int *IC){
 		if(strcmp(word, opcodes_table[oi].command) == 0){
 			printf("i'm in store_line_opcode\n");
 		}
-	}		
+	}
 }
 
 
