@@ -59,15 +59,15 @@ void first_pass(FILE *input_fp){
 		
 		if(!is_empty_line(line) && line[0] != ';'){/*if line is not empty nor it's a comment*/
 			/*memory allocation for the current element*/
-			machine_code_arr[mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);/*41*/
+			/*machine_code_arr[mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 			machine_code_arr[mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
 			if(machine_code_arr[mi].address == NULL || machine_code_arr[mi].code == NULL){
 				printf("\nmemory allocation failed\n");
 				exit(1);
-			}
+			}*/
 			
-			line_decode(line, line_num, machine_code_arr, mi, &error, &DC, &IC);
-			mi++;
+			line_decode(line, line_num, machine_code_arr, &mi, &error, &DC, &IC);
+			/*mi++;*/
 			if(error == TRUE){
 			printf("\nError!!\n");
 				error = FALSE;
@@ -101,7 +101,7 @@ void first_pass(FILE *input_fp){
 * statement, for each kind, it will send the line to an appropreate function in order to 
 * load the code written in the file, to the memory. 
 */
-void line_decode(char *line, int line_num, machine_code *machine_code_arr, int mi, int *error, int *DC, int *IC){
+void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *mi, int *error, int *DC, int *IC){
 	
 	char type, word[LINE_SIZE];
 	int i, wi; /*wi = word index*/
@@ -111,7 +111,6 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int m
  	current = NULL;
  	i = 0;
 	wi = 0;
-	
 	
 	/*syntax_errors(line, line_num, error);*/
 	/*temporarely, for now let's assume there isn't any syntax errors..*/
@@ -152,11 +151,15 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int m
 				*error = TRUE;
 				return;
 			}
+	
 		}
 		
 		else if(is_command(word)){
 			/*printf("%d: It's a command!!\n", line_num);*/
-			store_instruction_line(line, i, machine_code_arr, mi, word, IC);
+			store_instruction_line(line, i, machine_code_arr, mi, word, IC);/*storing the address of the command,
+			and the addressing methods code that is set according to each operand*/
+			*mi = *mi + 1;
+			store_instruction_line_operands(line, i, machine_code_arr, mi, &head, IC);
 			/**IC++;*/
 			break;
 		}
@@ -205,7 +208,7 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int m
 * 
 * NOTE: the parameter i starts after reading the command, so the function receives the command as parameter.
 */
-void store_instruction_line(char *line, int i, machine_code *machine_code_arr, int mi, char *command, int *IC){
+void store_instruction_line(char *line, int i, machine_code *machine_code_arr, int *mi, char *command, int *IC){
 	
 	char word[LINE_SIZE];
 	char opcode[11];
@@ -219,12 +222,20 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	has_register = FALSE;/*I made this flag because if the statement has a 
 	command and two registers, IC doesn't increase for the second register*/
 	
+	machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
+	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
+	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+		printf("\nmemory allocation failed\n");
+		exit(1);
+	}
+	
+	
 	/*saving the command binary code*/
 	for(; oi < COMMAND_QTY ; oi++){
 		if(strcmp(command, opcodes_table[oi].command) == 0){
 		
 			decimal_base32 = decimal_to_base32(*IC);
-			strcpy(machine_code_arr[mi].address, decimal_base32);		
+			strcpy(machine_code_arr[*mi].address, decimal_base32);		
 			free(decimal_base32);
 			*IC = *IC + 1;
 			strcpy(opcode, opcodes_table[oi].in_binary);/*--put the first 4 bits in the opcode--*/
@@ -295,11 +306,11 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	
 	/*printf("%s ", opcode);*/
 	binary_base32 = binary_to_base32(opcode);
-	strcpy(machine_code_arr[mi].code, binary_base32);
+	strcpy(machine_code_arr[*mi].code, binary_base32);
 	
 	free(binary_base32);
 	
-	printf("%s %s\n\n", machine_code_arr[mi].address, machine_code_arr[mi].code);
+	printf("%s %s\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code);
 	
 	/*reset addressing_method and opcode*/
 	while(ai < 6){
@@ -324,29 +335,68 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 * I use this function only for storing the command binary code, 
 * source and destination addressing type, and the A,R,E field.
 */
-void store_line_opcode(char *line, int *IC){
+void store_instruction_line_operands(char *line, int i, machine_code *machine_code_arr, int *mi, labels **head, int *IC){
 	
 	char word[LINE_SIZE];
-	int wi, li, oi;
-	wi = 0;/*wi = word index*/
-	li = 0;/*li = line index*/
-	oi = 0;/*oi = opcodes table index*/
+	char operand[LINE_SIZE];
+	int wi, oi;
+	wi = 0;
+	oi = 0;
 	
-	while(line[li] == ' ' || line[li] == '\t'){
-		li++;
-	}
+	/*machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
+	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
+	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+		printf("\nmemory allocation failed\n");
+		exit(1);
+	}*/
 	
-	while(line[li] != ' ' && line[li] != '\t' && line[li] != '\n' && line[li] != EOF){
-		word[wi] = line[li];
-		wi++;
-		li++;
-	}
-	word[wi] = '\0';
-	
-	for(oi = 0 ; oi < COMMAND_QTY ; oi++){
-		if(strcmp(word, opcodes_table[oi].command) == 0){
-			printf("i'm in store_line_opcode\n");
+	while(line[i] != '\n' && line[i] != EOF){
+		
+		
+		while(line[i] == ' ' || line[i] == '\t' || line[i] == ','){
+			i++;
 		}
+		/*printf("I'm here!! \n\n");*/
+		while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != ',' && line[i] != EOF){/*saving the operand in word*/
+			word[wi] = line[i];
+			wi++;
+			i++;
+		}
+		word[wi] = '\0';
+		wi = 0;
+		
+		if(word[0] == '#'){/*Immediate addressing*/
+			wi++;/*skip the #*/
+			while(word[wi] != '\0'){/*putting the actual number in first operand*/
+				operand[oi] = word[wi];
+				wi++;
+				oi++;
+			}
+			oi = 0;
+			/*printf("The number is: %d\n\n", atoi(operand));*/
+			
+			while(oi < LINE_SIZE && operand[oi] != '\0'){/*delete word*/
+				operand[oi] = '\0';
+			}
+			oi = 0;
+			continue;
+		}
+		
+		else if(is_register(word)){/*Direct register addressing*/
+			word[0] = word[1];
+			word[1] = '\0';/*in order to stay only with the register number*/
+			/*printf("The number of the register is: %d\n\n", atoi(word));*/
+			continue;
+		}
+		
+		else if(operand_is_label(word)){/*Direct addressing*/
+			/*printf("The label is: %s\n\n", word);
+			if(is_name_in_list(*head, word)){
+				printf("The label is: %s\n\n", word);
+			}*/
+		}
+		
+		/**mi = *mi + 1;*/
 	}
 }
 
