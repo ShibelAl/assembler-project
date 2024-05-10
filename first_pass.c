@@ -151,7 +151,7 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 				*error = TRUE;
 				return;
 			}
-	
+		
 		}
 		
 		else if(is_command(word)){
@@ -167,11 +167,11 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 		else if(strcmp(word, ".data") == 0){
 			/*printf("%d: It's .data!!\n", line_num);*/
 		}
-				
+		
 		else if(strcmp(word, ".string") == 0){
 			/*printf("%d: It's .string!!\n", line_num);*/
 		}
-				
+		
 		else if(strcmp(word, ".struct") == 0){
 			/*printf("%d: It's .struct!!\n", line_num);*/
 		}
@@ -331,9 +331,20 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 
 
 /*
-* this function stores opcode of the current line. 
+* Parameters: 
+* line: the current line in the assembly code.
+* i: index for traversing line.
+* machine_code_arr: the current node in the machine code linked list.
+* mi: machine_code_arr index.
+* head: the head node in the labels linked list.
+* IC: instrction counter.
+* 
+* Goal: this function stores opcode of the current line; 
 * I use this function only for storing the command binary code, 
 * source and destination addressing type, and the A,R,E field.
+* 
+* NOTE: i starts with the first character after the command, for inctance:
+* line = MAIN:  mov s1.1 ,LENGTH ---> this function starts with the first space after mov.
 */
 void store_instruction_line_operands(char *line, int i, machine_code *machine_code_arr, int *mi, labels **head, int *IC){
 	
@@ -343,6 +354,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 	wi = 0;
 	oi = 0;
 	
+	/*when I allocate memory, the number -5 in #-5 becomes 55!!!!*/
 	/*machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
 	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
@@ -373,7 +385,8 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 				oi++;
 			}
 			oi = 0;
-			/*printf("The number is: %d\n\n", atoi(operand));*/
+			
+			printf("The number is: %d\n\n", atoi(operand));
 			
 			while(oi < LINE_SIZE && operand[oi] != '\0'){/*delete word*/
 				operand[oi] = '\0';
@@ -385,15 +398,20 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 		else if(is_register(word)){/*Direct register addressing*/
 			word[0] = word[1];
 			word[1] = '\0';/*in order to stay only with the register number*/
-			/*printf("The number of the register is: %d\n\n", atoi(word));*/
+			printf("The number of the register is: %d\n\n", atoi(word));
 			continue;
 		}
 		
 		else if(operand_is_label(word)){/*Direct addressing*/
-			/*printf("The label is: %s\n\n", word);
 			if(is_name_in_list(*head, word)){
-				printf("The label is: %s\n\n", word);
-			}*/
+				printf("Error! The label %s exists in the label list!\n\n", word);
+			}
+			printf("The label is: %s\n\n", word);
+		}
+		
+		else{/*Accessing struct addressing*/
+			strtok(word, ".");
+			printf("The struct is: %s\n\n", word);
 		}
 		
 		/**mi = *mi + 1;*/
@@ -401,7 +419,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 }
 
 
-
+	
 
 
 /*returns true if parameter line has only blanks*/
@@ -671,6 +689,35 @@ char *binary_to_base32(char *binary_str){
     base32_representation[index] = '\0';
     
     return base32_representation;
+}
+
+
+
+
+/*Parameter:
+* num: an integer number.
+* 
+* Returns: 
+* num in binary.
+*/
+char* int_to_binary(int num){
+	
+	int i, bit;
+	/*allocate memory for 8 bits and the null terminator*/
+    char* binary = (char*)malloc(EIGHT_BITS * sizeof(char));
+    if (binary == NULL) {
+        printf("Memory allocation failed.\n");
+        exit(1);
+    }
+	
+    /*start from the most significant bit*/
+    for (i = 7; i >= 0; i--) {
+        /*check if the bit at position i is set*/
+        bit = (num >> i) & 1;
+        binary[7 - i] = bit + '0'; /*convert integer to character '0' or '1'*/
+    }
+    binary[8] = '\0';
+    return binary;
 }
 
 
