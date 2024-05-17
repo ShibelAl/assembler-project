@@ -354,21 +354,25 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 	wi = 0;
 	oi = 0;
 	
-	/*when I allocate memory, the number -5 in #-5 becomes 55!!!!*/
+	/*maybe I should put that inside of the loop so I can allocate memory for each word*/
 	/*machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
 	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
 		printf("\nmemory allocation failed\n");
 		exit(1);
 	}*/
-	
 	while(line[i] != '\n' && line[i] != EOF){
-		
 		
 		while(line[i] == ' ' || line[i] == '\t' || line[i] == ','){
 			i++;
 		}
-		/*printf("I'm here!! \n\n");*/
+		/*machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
+		machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
+		if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+			printf("\nmemory allocation failed\n");
+			exit(1);
+		}*/
+
 		while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != ',' && line[i] != EOF){/*saving the operand in word*/
 			word[wi] = line[i];
 			wi++;
@@ -376,7 +380,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 		}
 		word[wi] = '\0';
 		wi = 0;
-		
+			
 		if(word[0] == '#'){/*Immediate addressing*/
 			wi++;/*skip the #*/
 			while(word[wi] != '\0'){/*putting the actual number in first operand*/
@@ -384,6 +388,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 				wi++;
 				oi++;
 			}
+			operand[oi] = '\0';
 			oi = 0;
 			
 			printf("The number is: %d\n\n", atoi(operand));
