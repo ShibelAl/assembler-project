@@ -342,14 +342,16 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 * Goal: this function stores opcode of the current line; 
 * I use this function only for storing the command binary code, 
 * source and destination addressing type, and the A,R,E field.
-* 
+*   
 * NOTE: i starts with the first character after the command, for inctance:
 * line = MAIN:  mov s1.1 ,LENGTH ---> this function starts with the first space after mov.
-*/
+*/ 
 void store_instruction_line_operands(char *line, int i, machine_code *machine_code_arr, int *mi, labels **head, int *IC){
 	
 	char word[LINE_SIZE];
 	char operand[LINE_SIZE];
+	char binary[BINARY_LENGTH];
+	char *decimal_base32, *binary_base32;
 	int wi, oi;
 	wi = 0;
 	oi = 0;
@@ -360,19 +362,19 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
 		printf("\nmemory allocation failed\n");
 		exit(1);
-	}*/
+	}*/ 
 	while(line[i] != '\n' && line[i] != EOF){
 		
 		while(line[i] == ' ' || line[i] == '\t' || line[i] == ','){
 			i++;
 		}
-		/*machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
+		machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 		machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
 		if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
 			printf("\nmemory allocation failed\n");
 			exit(1);
-		}*/
-
+		}
+		
 		while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != ',' && line[i] != EOF){/*saving the operand in word*/
 			word[wi] = line[i];
 			wi++;
@@ -391,6 +393,15 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			operand[oi] = '\0';
 			oi = 0;
 			
+			/*&&&&&&&&&&&&&&&&&&&&&&&& HERE IS THE PROBLEM, WITH THE IC. &&&&&&&&&&&&&&&&&&&&&&&*/
+			decimal_base32 = decimal_to_base32(*IC - 1);
+			strcpy(machine_code_arr[*mi].address, decimal_base32);	
+			free(decimal_base32);
+			
+			strcpy(binary, strcat(int_to_binary(atoi(operand)), "00"));
+			binary_base32 = binary_to_base32(binary);
+			strcpy(machine_code_arr[*mi].code, binary_base32);
+			printf("%s %s\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code);
 			printf("The number is: %d\n\n", atoi(operand));
 			
 			while(oi < LINE_SIZE && operand[oi] != '\0'){/*delete word*/
