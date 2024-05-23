@@ -243,7 +243,7 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	}
 	
 	
-	
+	/**IC = *IC + 1;*/
 	while(line[i] != '\n' && line[i] != EOF){
 		
 		while(line[i] == ' ' || line[i] == '\t' || line[i] == ','){/*skip spaces*/
@@ -259,7 +259,7 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 		word[wi] = '\0';
 		wi = 0;
 		
-		*IC = *IC + 1;/*new instruction operand, so new IC.*/
+		/**IC = *IC + 1;*//*new instruction operand, so new IC.*/
 	
 		/*I arranged these if statements like that for a reason
 		(for the similarity between the direct addressing and accessing struct addressing)*/
@@ -272,7 +272,7 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 			
 			strcat(addressing_method, "11");/*11 is the binary code for register addressing*/
 			if(has_register){
-				*IC = *IC - 1;/*to prevent increasing the IC for both registers*/
+				/**IC = *IC - 1*/;/*to prevent increasing the IC for both registers*/
 				has_register = FALSE;/*I passed two registers, now reset the flag.*/
 			}
 			has_register = TRUE;
@@ -286,7 +286,7 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 		
 		else{/*Accessing struct addressing*/
 			strcat(addressing_method, "10");/*10 is the binary code for accessing struct addressing*/
-			*IC = *IC + 1;/*to access the struct field*/
+			/**IC = *IC + 1;*//*to access the struct field*/
 			/*printf("Accessing struct addressing  ");*/
 		}
 		
@@ -352,6 +352,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 	char operand[LINE_SIZE];
 	char binary[BINARY_LENGTH];
 	char *decimal_base32, *binary_base32;
+	char *token;
 	int wi, oi;
 	wi = 0;
 	oi = 0;
@@ -382,7 +383,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 		}
 		word[wi] = '\0';
 		wi = 0;
-			
+		
 		if(word[0] == '#'){/*Immediate addressing*/
 			wi++;/*skip the #*/
 			while(word[wi] != '\0'){/*putting the actual number in first operand*/
@@ -394,7 +395,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			oi = 0;
 			
 			/*&&&&&&&&&&&&&&&&&&&&&&&& HERE IS THE PROBLEM, WITH THE IC. &&&&&&&&&&&&&&&&&&&&&&&*/
-			decimal_base32 = decimal_to_base32(*IC - 1);
+			decimal_base32 = decimal_to_base32(*IC/* - 1*/);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
 			
@@ -402,19 +403,28 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			binary_base32 = binary_to_base32(binary);
 			strcpy(machine_code_arr[*mi].code, binary_base32);
 			printf("%s %s\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code);
-			printf("The number is: %d\n\n", atoi(operand));
+			/*printf("The number is: %d\n\n", atoi(operand));*/
 			
 			while(oi < LINE_SIZE && operand[oi] != '\0'){/*delete word*/
 				operand[oi] = '\0';
 			}
 			oi = 0;
+			*IC = *IC + 1;
 			continue;
 		}
 		
 		else if(is_register(word)){/*Direct register addressing*/
 			word[0] = word[1];
 			word[1] = '\0';/*in order to stay only with the register number*/
-			printf("The number of the register is: %d\n\n", atoi(word));
+			
+			
+			decimal_base32 = decimal_to_base32(*IC);
+			strcpy(machine_code_arr[*mi].address, decimal_base32);	
+			free(decimal_base32);
+			printf("%s\n\n", machine_code_arr[*mi].address);
+			
+			/*printf("The number of the register is: %d\n\n", atoi(word));*/
+			*IC = *IC + 1;
 			continue;
 		}
 		
@@ -422,16 +432,42 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			if(is_name_in_list(*head, word)){
 				printf("Error! The label %s exists in the label list!\n\n", word);
 			}
-			printf("The label is: %s\n\n", word);
+			
+			
+			decimal_base32 = decimal_to_base32(*IC);
+			strcpy(machine_code_arr[*mi].address, decimal_base32);	
+			free(decimal_base32);
+			printf("%s\n\n", machine_code_arr[*mi].address);
+			*IC = *IC + 1;
+			/*printf("The label is: %s\n\n", word);*/
 		}
 		
 		else{/*Accessing struct addressing*/
-			strtok(word, ".");
-			printf("The struct is: %s\n\n", word);
+			token = strtok(word, ".");
+			
+			
+			decimal_base32 = decimal_to_base32(*IC);
+			strcpy(machine_code_arr[*mi].address, decimal_base32);	
+			free(decimal_base32);
+			printf("%s\n\n", machine_code_arr[*mi].address);
+			
+			*IC = *IC + 1;
+			
+			token = strtok(NULL, ".");
+			
+			decimal_base32 = decimal_to_base32(*IC);
+			strcpy(machine_code_arr[*mi].address, decimal_base32);	
+			free(decimal_base32);
+			printf("%s\n\n", machine_code_arr[*mi].address);
+			
+			*IC = *IC + 1;
+			
+			/*printf("The struct is: %s\n\n", word);*/
 		}
 		
 		/**mi = *mi + 1;*/
 	}
+	
 }
 
 
