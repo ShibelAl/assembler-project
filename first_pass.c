@@ -272,7 +272,7 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 			
 			strcat(addressing_method, "11");/*11 is the binary code for register addressing*/
 			if(has_register){
-				/**IC = *IC - 1*/;/*to prevent increasing the IC for both registers*/
+				*IC = *IC - 1;/*to prevent increasing the IC for both registers*/
 				has_register = FALSE;/*I passed two registers, now reset the flag.*/
 			}
 			has_register = TRUE;
@@ -394,8 +394,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			operand[oi] = '\0';
 			oi = 0;
 			
-			/*&&&&&&&&&&&&&&&&&&&&&&&& HERE IS THE PROBLEM, WITH THE IC. &&&&&&&&&&&&&&&&&&&&&&&*/
-			decimal_base32 = decimal_to_base32(*IC/* - 1*/);
+			decimal_base32 = decimal_to_base32(*IC);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
 			
@@ -421,6 +420,10 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			decimal_base32 = decimal_to_base32(*IC);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
+			
+			
+			
+			
 			printf("%s\n\n", machine_code_arr[*mi].address);
 			
 			/*printf("The number of the register is: %d\n\n", atoi(word));*/
