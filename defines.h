@@ -9,7 +9,9 @@
 #define MI_LENGTH 11 /*MI = MACHINE INSTRUCTION. actual length is 10 bits + 1 for null terminator*/
 #define TWO_FIELDS 2 /*the two fields are memory address, and data/instruction. in the ram.*/
 #define RAM_SIZE 256 /*according to the maman, the ram in the virtual computer has 256 cells*/
+#define TEN_BITS 11/*it's 10 bits + 1 the null terminator*/
 #define EIGHT_BITS 9/*it's 8 bits + 1 the null terminator*/
+#define FOUR_BITS 5/*it's 4 bits + 1 the null terminator*/
 
 enum boolean{FALSE, TRUE};
 
