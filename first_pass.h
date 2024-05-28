@@ -11,4 +11,6 @@ int is_register(char *word);
 int operand_is_label(char *word);
 char *decimal_to_base32(int decimal);
 char *binary_to_base32(char *binary_str);
-char* int_to_binary(int num);
+char* int_to_10_binary(int num);
+char* int_to_8_binary(int num);
+char* int_to_4_binary(int num);

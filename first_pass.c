@@ -273,7 +273,7 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 			strcat(addressing_method, "11");/*11 is the binary code for register addressing*/
 			if(has_register){
 				*IC = *IC - 1;/*to prevent increasing the IC for both registers*/
-				has_register = FALSE;/*I passed two registers, now reset the flag.*/
+				has_register = FALSE;/*I passed two registers, now reset the flag.*/ /*@@@@@@@@@@@@@@@@@@@#### I think this is meaningless */
 			}
 			has_register = TRUE;
 			/*printf("Direct register addressing  ");*/
@@ -354,16 +354,18 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 	char *decimal_base32, *binary_base32;
 	char *token;
 	int wi, oi;
-	wi = 0;
-	oi = 0;
-	
+	int is_first_operand;
+	wi = 0;/*wi = word index*/
+	oi = 0;/*oi = operand index*/
+	is_first_operand = TRUE; /*to differentiate between the first and second operand*/	
+		
 	/*maybe I should put that inside of the loop so I can allocate memory for each word*/
 	/*machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
 	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
 		printf("\nmemory allocation failed\n");
 		exit(1);
-	}*/ 
+	}*/
 	while(line[i] != '\n' && line[i] != EOF){
 		
 		while(line[i] == ' ' || line[i] == '\t' || line[i] == ','){
@@ -398,7 +400,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
 			
-			strcpy(binary, strcat(int_to_binary(atoi(operand)), "00"));
+			strcpy(binary, strcat(int_to_8_binary(atoi(operand)), "00"));
 			binary_base32 = binary_to_base32(binary);
 			strcpy(machine_code_arr[*mi].code, binary_base32);
 			printf("%s %s\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code);
@@ -421,10 +423,21 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
 			
+			if(is_first_operand){
+				strcpy(binary, int_to_4_binary(atoi(word)));
+				is_first_operand = FALSE;
+			}
+			else{
+				strcat(binary, int_to_4_binary(atoi(word)));
+				strcat(binary, "00");
+				binary_base32 = binary_to_base32(binary);
+				strcpy(machine_code_arr[*mi].code, binary_base32);
+				printf("%s %s\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code);
+			}
 			
 			
 			
-			printf("%s\n\n", machine_code_arr[*mi].address);
+			/*printf("%s\n\n", machine_code_arr[*mi].address);*/
 			
 			/*printf("The number of the register is: %d\n\n", atoi(word));*/
 			*IC = *IC + 1;
@@ -753,9 +766,40 @@ char *binary_to_base32(char *binary_str){
 * num: an integer number.
 * 
 * Returns: 
-* num in binary.
+* The integer num in 10 bit binary expression.
 */
-char* int_to_binary(int num){
+char* int_to_10_binary(int num){
+	
+	int i, bit;
+	/*allocate memory for 8 bits and the null terminator*/
+    char* binary = (char*)malloc(TEN_BITS * sizeof(char));
+    if (binary == NULL) {
+        printf("Memory allocation failed.\n");
+        exit(1);
+    }
+	
+    /*start from the most significant bit*/
+    for (i = 9; i >= 0; i--) {
+        /*check if the bit at position i is set*/
+        bit = (num >> i) & 1;
+        binary[9 - i] = bit + '0'; /*convert integer to character '0' or '1'*/
+    }
+    binary[10] = '\0';
+    return binary;
+}
+
+
+
+
+
+
+/*Parameter:
+* num: an integer number.
+* 
+* Returns: 
+* The integer num in 8 bit binary expression.
+*/
+char* int_to_8_binary(int num){
 	
 	int i, bit;
 	/*allocate memory for 8 bits and the null terminator*/
@@ -776,3 +820,30 @@ char* int_to_binary(int num){
 }
 
 
+
+
+/*Parameter:
+* num: an integer number.
+* 
+* Returns: 
+* The integer num in 4 bit binary expression.
+*/
+char* int_to_4_binary(int num){
+	
+	int i, bit;
+	/*allocate memory for 8 bits and the null terminator*/
+    char* binary = (char*)malloc(FOUR_BITS * sizeof(char));
+    if (binary == NULL) {
+        printf("Memory allocation failed.\n");
+        exit(1);
+    }
+	
+    /*start from the most significant bit*/
+    for (i = 3; i >= 0; i--) {
+        /*check if the bit at position i is set*/
+        bit = (num >> i) & 1;
+        binary[3 - i] = bit + '0'; /*convert integer to character '0' or '1'*/
+    }
+    binary[4] = '\0';
+    return binary;
+}
