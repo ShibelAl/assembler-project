@@ -310,7 +310,7 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	
 	free(binary_base32);
 	
-	printf("%s %s\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code);
+	printf("%s %s	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
 	
 	/*reset addressing_method and opcode*/
 	while(ai < 6){
@@ -403,7 +403,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			strcpy(binary, strcat(int_to_8_binary(atoi(operand)), "00"));
 			binary_base32 = binary_to_base32(binary);
 			strcpy(machine_code_arr[*mi].code, binary_base32);
-			printf("%s %s\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code);
+			printf("%s %s	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
 			/*printf("The number is: %d\n\n", atoi(operand));*/
 			
 			while(oi < LINE_SIZE && operand[oi] != '\0'){/*delete word*/
@@ -411,13 +411,11 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			}
 			oi = 0;
 			*IC = *IC + 1;
-			continue;
 		}
 		
 		else if(is_register(word)){/*Direct register addressing*/
 			word[0] = word[1];
 			word[1] = '\0';/*in order to stay only with the register number*/
-			
 			
 			decimal_base32 = decimal_to_base32(*IC);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
@@ -432,14 +430,10 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 				strcat(binary, "00");
 				binary_base32 = binary_to_base32(binary);
 				strcpy(machine_code_arr[*mi].code, binary_base32);
-				printf("%s %s\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code);
+				printf("%s %s	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
+				*mi = *mi + 1;
 			}
 			
-			
-			
-			/*printf("%s\n\n", machine_code_arr[*mi].address);*/
-			
-			/*printf("The number of the register is: %d\n\n", atoi(word));*/
 			*IC = *IC + 1;
 			continue;
 		}
@@ -449,11 +443,17 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 				printf("Error! The label %s exists in the label list!\n\n", word);
 			}
 			
-			
 			decimal_base32 = decimal_to_base32(*IC);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
-			printf("%s\n\n", machine_code_arr[*mi].address);
+			
+			/*I need to put "?" in the code section in order to come back to it in the second pass
+			because when there is a label, in the code section we put the address of the label,
+			so it's a bit tricky*/
+			/*binary_base32 = binary_to_base32(binary);*/
+			strcpy(machine_code_arr[*mi].code, "?");
+			printf("%s %s	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
+			
 			*IC = *IC + 1;
 			/*printf("The label is: %s\n\n", word);*/
 		}
@@ -461,27 +461,39 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 		else{/*Accessing struct addressing*/
 			token = strtok(word, ".");
 			
-			
 			decimal_base32 = decimal_to_base32(*IC);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
-			printf("%s\n\n", machine_code_arr[*mi].address);
+			
+			strcpy(machine_code_arr[*mi].code, "?");
+			printf("%s %s    %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
 			
 			*IC = *IC + 1;
 			
 			token = strtok(NULL, ".");
+			/*printf("%s\n\n", token);*//*to ensure that token is the number or the struct field*/
 			
+			*mi = *mi + 1;
+			machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
+			machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
+			if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+				printf("\nmemory allocation failed\n");
+				exit(1);
+			}
 			decimal_base32 = decimal_to_base32(*IC);
-			strcpy(machine_code_arr[*mi].address, decimal_base32);	
+			strcpy(machine_code_arr[*mi].address, decimal_base32);
 			free(decimal_base32);
-			printf("%s\n\n", machine_code_arr[*mi].address);
+			
+			strcpy(binary, int_to_8_binary(atoi(token)));/*make the number of the struct be in 8 digits binary
+														  (like in the example table in the maman)*/
+			strcat(binary, "00");/*add 00 to the A.R.E field*/
+			strcpy(machine_code_arr[*mi].code, binary_to_base32(binary)); /*convert the binary code into base 32*/
+			printf("%s %s	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
 			
 			*IC = *IC + 1;
-			
-			/*printf("The struct is: %s\n\n", word);*/
 		}
 		
-		/**mi = *mi + 1;*/
+		*mi = *mi + 1;
 	}
 	
 }
