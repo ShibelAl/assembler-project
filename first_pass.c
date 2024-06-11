@@ -156,7 +156,7 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 		
 		else if(is_command(word)){
 			/*printf("%d: It's a command!!\n", line_num);*/
-			store_instruction_line(line, i, machine_code_arr, mi, word, IC);/*storing the address of the command,
+			store_instruction_line(line, i, machine_code_arr, mi, word, &head, IC);/*storing the address of the command,
 			and the addressing methods code that is set according to each operand*/
 			*mi = *mi + 1;
 			store_instruction_line_operands(line, i, machine_code_arr, mi, &head, IC);
@@ -190,7 +190,7 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 		wi = 0;
 		
 	}
-			
+	
 }
 
 
@@ -208,7 +208,7 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 * 
 * NOTE: the parameter i starts after reading the command, so the function receives the command as parameter.
 */
-void store_instruction_line(char *line, int i, machine_code *machine_code_arr, int *mi, char *command, int *IC){
+void store_instruction_line(char *line, int i, machine_code *machine_code_arr, int *mi, char *command, labels **head, int *IC){
 	
 	char word[LINE_SIZE];
 	char opcode[11];
@@ -221,6 +221,8 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	ai = 0;
 	has_register = FALSE;/*I made this flag because if the statement has a 
 	command and two registers, IC doesn't increase for the second register*/
+	strcpy(opcode, "");
+	strcpy(addressing_method, "");
 	
 	machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
@@ -233,11 +235,11 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	/*saving the command binary code*/
 	for(; oi < COMMAND_QTY ; oi++){
 		if(strcmp(command, opcodes_table[oi].command) == 0){
-		
+			
 			decimal_base32 = decimal_to_base32(*IC);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);		
 			free(decimal_base32);
-			*IC = *IC + 1;
+			/**IC = *IC + 1;*/
 			strcpy(opcode, opcodes_table[oi].in_binary);/*--put the first 4 bits in the opcode--*/
 		}
 	}
@@ -260,7 +262,7 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 		wi = 0;
 		
 		/**IC = *IC + 1;*//*new instruction operand, so new IC.*/
-	
+		
 		/*I arranged these if statements like that for a reason
 		(for the similarity between the direct addressing and accessing struct addressing)*/
 		if(word[0] == '#'){/*Immediate addressing*/
@@ -272,7 +274,7 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 			
 			strcat(addressing_method, "11");/*11 is the binary code for register addressing*/
 			if(has_register){
-				*IC = *IC - 1;/*to prevent increasing the IC for both registers*/
+				/**IC = *IC - 1;*//*to prevent increasing the IC for both registers*/
 				has_register = FALSE;/*I passed two registers, now reset the flag.*/ /*@@@@@@@@@@@@@@@@@@@#### I think this is meaningless */
 			}
 			has_register = TRUE;
@@ -280,6 +282,10 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 		}
 		
 		else if(operand_is_label(word)){/*Direct addressing*/
+			/*Same label can't be declared twice*/
+			if(is_name_in_list(*head, word)){
+				printf("Error! The label %s exists in the label list!\n\n", word);
+			}
 			strcat(addressing_method, "01");/*01 is the binary code for direct addressing*/
 			/*printf("Direct addressing  ");*/
 		}
@@ -289,7 +295,6 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 			/**IC = *IC + 1;*//*to access the struct field*/
 			/*printf("Accessing struct addressing  ");*/
 		}
-		
 	}
 	/*because if there is only one operand, the addressing code will be 00 and something*/
 	if(strlen(addressing_method) == 2){
@@ -299,7 +304,9 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	else if(strlen(addressing_method) == 0){
 		strcat(opcode, "0000");
 	}	
+	
 	else strcat(opcode, addressing_method);
+	
 	
 	/*the A.R.E field is 00 when it's an instruction line*/
 	strcat(opcode, "00");
@@ -310,8 +317,8 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	
 	free(binary_base32);
 	
-	printf("%s %s	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
-	
+	printf("%s %s	%d	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
+	*IC = *IC + 1;
 	/*reset addressing_method and opcode*/
 	while(ai < 6){
 		addressing_method[ai] = '\0';
@@ -396,14 +403,15 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			operand[oi] = '\0';
 			oi = 0;
 			
+			/*saving the address*/
 			decimal_base32 = decimal_to_base32(*IC);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
-			
-			strcpy(binary, strcat(int_to_8_binary(atoi(operand)), "00"));
-			binary_base32 = binary_to_base32(binary);
+			/*saving the data*/
+			strcpy(binary, strcat(int_to_8_binary(atoi(operand)), "00"));/*atoi(operand) is the number after the #, e.g. #5 --> atoi(operand) = 5*/
+			binary_base32 = binary_to_base32(binary);/*switching the binary expression to base 32*/
 			strcpy(machine_code_arr[*mi].code, binary_base32);
-			printf("%s %s	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
+			printf("%s %s	%d	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
 			/*printf("The number is: %d\n\n", atoi(operand));*/
 			
 			while(oi < LINE_SIZE && operand[oi] != '\0'){/*delete word*/
@@ -413,17 +421,29 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			*IC = *IC + 1;
 		}
 		
+		
 		else if(is_register(word)){/*Direct register addressing*/
+			/*printf("ooo: %d\n", *IC);*/
 			word[0] = word[1];
 			word[1] = '\0';/*in order to stay only with the register number*/
 			
+			/*saving the address*/
 			decimal_base32 = decimal_to_base32(*IC);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
-			
+			/*saving the data*/
 			if(is_first_operand){
 				strcpy(binary, int_to_4_binary(atoi(word)));
 				is_first_operand = FALSE;
+				if(number_of_registers(line) == 1){
+					strcat(binary, "000000");/*if there is only one register, then the first 4 bits is 
+					the number of the register, and the other 4 bits is 0000, and the A.R.E field is 00*/
+					printf("%s %s	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
+					*mi = *mi + 1;
+				}
+				else{/*if this register is the first operand, and there is 2 registers in the line (two operands that they are registers)*/
+					*IC = *IC - 1;/*to prevent increasing the IC for both registers*/
+				}
 			}
 			else{
 				strcat(binary, int_to_4_binary(atoi(word)));
@@ -439,23 +459,15 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 		}
 		
 		else if(operand_is_label(word)){/*Direct addressing*/
-			if(is_name_in_list(*head, word)){
-				printf("Error! The label %s exists in the label list!\n\n", word);
-			}
-			
+			/*saving the address*/
 			decimal_base32 = decimal_to_base32(*IC);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
-			
-			/*I need to put "?" in the code section in order to come back to it in the second pass
-			because when there is a label, in the code section we put the address of the label,
-			so it's a bit tricky*/
-			/*binary_base32 = binary_to_base32(binary);*/
+			/*saving the data (the data of the label is it's address where it's declared)*/
 			strcpy(machine_code_arr[*mi].code, "?");
 			printf("%s %s	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
 			
 			*IC = *IC + 1;
-			/*printf("The label is: %s\n\n", word);*/
 		}
 		
 		else{/*Accessing struct addressing*/
@@ -470,8 +482,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			
 			*IC = *IC + 1;
 			
-			token = strtok(NULL, ".");
-			/*printf("%s\n\n", token);*//*to ensure that token is the number or the struct field*/
+			token = strtok(NULL, ".");/*now token has the struct's field number. (e.g. struct is S1.2 --> token = 2)*/
 			
 			*mi = *mi + 1;
 			machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
@@ -859,3 +870,51 @@ char* int_to_4_binary(int num){
     binary[4] = '\0';
     return binary;
 }
+
+
+
+
+
+
+/*
+*Parameter: the current line in the document
+*
+*Returns: how many registers in line (could be 0, 1 or 2)
+*/
+int number_of_registers(char *line){
+	int i, count, wi;
+	char word[LINE_SIZE];
+	i = 0;
+	count = 0;/*number of the registers in the command (it could be 1 or 2)*/	
+	wi = 0;
+	while(line[i] != '\n' && line[i] != EOF){
+	
+		while(line[i] == ' ' || line[i] == '\t' || line[i] == ','){/*skip spaces*/
+			i++;
+		}
+		
+		/*take the next word*/
+		while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != ',' && line[i] != EOF){
+			word[wi] = line[i];
+			wi++;
+			i++;
+		}
+		word[wi] = '\0';
+		wi = 0;
+		
+		if(is_register(word)){
+			count++;
+		}
+	}
+	return count;
+}
+
+
+
+
+
+
+
+
+
+
