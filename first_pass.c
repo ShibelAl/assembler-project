@@ -67,7 +67,6 @@ void first_pass(FILE *input_fp){
 			}*/
 			
 			line_decode(line, line_num, machine_code_arr, &mi, &error, &DC, &IC);
-			/*mi++;*/
 			if(error == TRUE){
 			printf("\nError!!\n");
 				error = FALSE;
@@ -130,9 +129,6 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 		word[wi] = '\0';
 		wi = 0;
 		
-		/*printf("%s ", word);*/
-		/*printf("we are at %d \n", mi);*/
-		
 		if(is_label(word)){
 	
 			word[strlen(word) - 1] = '\0';/*removing the ':' from the label*/
@@ -160,7 +156,6 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 			and the addressing methods code that is set according to each operand*/
 			*mi = *mi + 1;
 			store_instruction_line_operands(line, i, machine_code_arr, mi, &head, IC);
-			/**IC++;*/
 			break;
 		}
 		
@@ -214,13 +209,11 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	char opcode[11];
 	char addressing_method[5];/*for storing addressing method binary codes*/
 	char *decimal_base32, *binary_base32;
-	int wi, oi, has_register;
+	int wi, oi;
 	int ai;
 	wi = 0; /*wi = word index*/
 	oi = 0; /*oi = opcodes table index.*/
 	ai = 0;
-	has_register = FALSE;/*I made this flag because if the statement has a 
-	command and two registers, IC doesn't increase for the second register*/
 	strcpy(opcode, "");
 	strcpy(addressing_method, "");
 	
@@ -239,13 +232,10 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 			decimal_base32 = decimal_to_base32(*IC);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);		
 			free(decimal_base32);
-			/**IC = *IC + 1;*/
 			strcpy(opcode, opcodes_table[oi].in_binary);/*--put the first 4 bits in the opcode--*/
 		}
 	}
 	
-	
-	/**IC = *IC + 1;*/
 	while(line[i] != '\n' && line[i] != EOF){
 		
 		while(line[i] == ' ' || line[i] == '\t' || line[i] == ','){/*skip spaces*/
@@ -267,18 +257,12 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 		(for the similarity between the direct addressing and accessing struct addressing)*/
 		if(word[0] == '#'){/*Immediate addressing*/
 			strcat(addressing_method, "00");/*00 is the binary code for immediate addressing*/
-			/*printf("Immediate addressing  ");*/
 		}
 		
 		else if(is_register(word)){/*Direct register addressing*/
 			
 			strcat(addressing_method, "11");/*11 is the binary code for register addressing*/
-			if(has_register){
-				/**IC = *IC - 1;*//*to prevent increasing the IC for both registers*/
-				has_register = FALSE;/*I passed two registers, now reset the flag.*/ /*@@@@@@@@@@@@@@@@@@@#### I think this is meaningless */
-			}
-			has_register = TRUE;
-			/*printf("Direct register addressing  ");*/
+			
 		}
 		
 		else if(operand_is_label(word)){/*Direct addressing*/
@@ -287,13 +271,10 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 				printf("Error! The label %s exists in the label list!\n\n", word);
 			}
 			strcat(addressing_method, "01");/*01 is the binary code for direct addressing*/
-			/*printf("Direct addressing  ");*/
 		}
 		
 		else{/*Accessing struct addressing*/
 			strcat(addressing_method, "10");/*10 is the binary code for accessing struct addressing*/
-			/**IC = *IC + 1;*//*to access the struct field*/
-			/*printf("Accessing struct addressing  ");*/
 		}
 	}
 	/*because if there is only one operand, the addressing code will be 00 and something*/
@@ -317,7 +298,7 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	
 	free(binary_base32);
 	
-	printf("%s %s	%d	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
+	printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
 	*IC = *IC + 1;
 	/*reset addressing_method and opcode*/
 	while(ai < 6){
@@ -361,11 +342,13 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 	char *decimal_base32, *binary_base32;
 	char *token;
 	int wi, oi;
-	int is_first_operand;
+	int is_first_operand;/*A flag to know if i'm now at the first operand in the command or the second one (if there is second..)
+	and I made this flag to know how to encode the register, because it's different being the first operand or the second as a register*/
 	wi = 0;/*wi = word index*/
 	oi = 0;/*oi = operand index*/
-	is_first_operand = TRUE; /*to differentiate between the first and second operand*/	
-		
+	is_first_operand = TRUE;/*to differentiate between the first and second operand*/		
+	
+	
 	/*maybe I should put that inside of the loop so I can allocate memory for each word*/
 	/*machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
@@ -394,6 +377,9 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 		wi = 0;
 		
 		if(word[0] == '#'){/*Immediate addressing*/
+			is_first_operand = FALSE;/*I put this so if a register comes after this operand, I know how to 
+			encode his data, because if a register comes as the first operand it is different than when it
+			comes as the second operand, so it's a register thing..*/
 			wi++;/*skip the #*/
 			while(word[wi] != '\0'){/*putting the actual number in first operand*/
 				operand[oi] = word[wi];
@@ -411,7 +397,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			strcpy(binary, strcat(int_to_8_binary(atoi(operand)), "00"));/*atoi(operand) is the number after the #, e.g. #5 --> atoi(operand) = 5*/
 			binary_base32 = binary_to_base32(binary);/*switching the binary expression to base 32*/
 			strcpy(machine_code_arr[*mi].code, binary_base32);
-			printf("%s %s	%d	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
+			printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
 			/*printf("The number is: %d\n\n", atoi(operand));*/
 			
 			while(oi < LINE_SIZE && operand[oi] != '\0'){/*delete word*/
@@ -423,7 +409,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 		
 		
 		else if(is_register(word)){/*Direct register addressing*/
-			/*printf("ooo: %d\n", *IC);*/
+			
 			word[0] = word[1];
 			word[1] = '\0';/*in order to stay only with the register number*/
 			
@@ -431,46 +417,75 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			decimal_base32 = decimal_to_base32(*IC);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
-			/*saving the data*/
-			if(is_first_operand){
-				strcpy(binary, int_to_4_binary(atoi(word)));
-				is_first_operand = FALSE;
-				if(number_of_registers(line) == 1){
-					strcat(binary, "000000");/*if there is only one register, then the first 4 bits is 
-					the number of the register, and the other 4 bits is 0000, and the A.R.E field is 00*/
-					printf("%s %s	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
+			
+			/*if there is one register in the line*/
+			if(number_of_registers(line) == 1){
+				if(is_first_operand){
+					/*look at the example table in the maman to understand why I did this*/
+					strcpy(binary, int_to_4_binary(atoi(word)));
+					strcat(binary, "0000");
+					strcat(binary, "00");
+					binary_base32 = binary_to_base32(binary);
+					strcpy(machine_code_arr[*mi].code, binary_base32);
+					printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
+					*mi = *mi + 1;
+					is_first_operand = FALSE;
+				}
+				/*if it's the second operand in the line*/
+				else{
+					strcpy(binary, "0000");
+					strcat(binary, int_to_4_binary(atoi(word)));
+					strcat(binary, "00");
+					binary_base32 = binary_to_base32(binary);
+					strcpy(machine_code_arr[*mi].code, binary_base32);
+					printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
 					*mi = *mi + 1;
 				}
-				else{/*if this register is the first operand, and there is 2 registers in the line (two operands that they are registers)*/
-					*IC = *IC - 1;/*to prevent increasing the IC for both registers*/
-				}
-			}
-			else{
-				strcat(binary, int_to_4_binary(atoi(word)));
-				strcat(binary, "00");
-				binary_base32 = binary_to_base32(binary);
-				strcpy(machine_code_arr[*mi].code, binary_base32);
-				printf("%s %s	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
-				*mi = *mi + 1;
 			}
 			
+			/*if there is two registers in the line*/
+			else{
+				if(is_first_operand){
+					strcpy(binary, int_to_4_binary(atoi(word)));
+					is_first_operand = FALSE;
+				}
+				/*if its the second operand in the line*/
+				else{
+					*IC = *IC - 1;/*because if there is two registers in the line, I don't want to increase the IC
+					for each one of them. Look at the example table of the maman*/
+					decimal_base32 = decimal_to_base32(*IC);
+					strcpy(machine_code_arr[*mi].address, decimal_base32);	
+					strcat(binary, int_to_4_binary(atoi(word)));
+					strcat(binary, "00");
+					binary_base32 = binary_to_base32(binary);
+					strcpy(machine_code_arr[*mi].code, binary_base32);
+					printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
+					*mi = *mi + 1;
+				}
+			}
 			*IC = *IC + 1;
 			continue;
 		}
 		
 		else if(operand_is_label(word)){/*Direct addressing*/
+			is_first_operand = FALSE;/*I put this so if a register comes after this operand, I know how to 
+			encode his data, because if a register comes as the first operand it is different than when it
+			comes as the second operand, so it's a register thing..*/
 			/*saving the address*/
 			decimal_base32 = decimal_to_base32(*IC);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
 			/*saving the data (the data of the label is it's address where it's declared)*/
 			strcpy(machine_code_arr[*mi].code, "?");
-			printf("%s %s	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
+			printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
 			
 			*IC = *IC + 1;
 		}
 		
 		else{/*Accessing struct addressing*/
+			is_first_operand = FALSE;/*I put this so if a register comes after this operand, I know how to 
+			encode his data, because if a register comes as the first operand it is different than when it
+			comes as the second operand, so it's a register thing..*/
 			token = strtok(word, ".");
 			
 			decimal_base32 = decimal_to_base32(*IC);
@@ -478,7 +493,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			free(decimal_base32);
 			
 			strcpy(machine_code_arr[*mi].code, "?");
-			printf("%s %s    %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
+			printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
 			
 			*IC = *IC + 1;
 			
@@ -499,7 +514,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 														  (like in the example table in the maman)*/
 			strcat(binary, "00");/*add 00 to the A.R.E field*/
 			strcpy(machine_code_arr[*mi].code, binary_to_base32(binary)); /*convert the binary code into base 32*/
-			printf("%s %s	%d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi);
+			printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
 			
 			*IC = *IC + 1;
 		}
