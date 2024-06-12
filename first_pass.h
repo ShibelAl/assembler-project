@@ -1,17 +1,5 @@
 void first_pass(FILE *input_fp);
-int is_empty_line(char *line);
-int is_label(char *word);
-int is_alphabetic(char character);
-int is_command(char *word);
-char line_type(char *line, int i, int line_num, int *error);
 void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *mi, int *error, int *DC, int *IC);
 void store_instruction_line(char *line, int i, machine_code *machine_code_arr, int *mi, char *command, labels **head, int *IC);
 void store_instruction_line_operands(char *line, int i, machine_code *machine_code_arr, int *mi, labels **head, int *IC);
-int is_register(char *word);
-int operand_is_label(char *word);
-char *decimal_to_base32(int decimal);
-char *binary_to_base32(char *binary_str);
-char* int_to_10_binary(int num);
-char* int_to_8_binary(int num);
-char* int_to_4_binary(int num);
-int number_of_registers(char *line);
+
