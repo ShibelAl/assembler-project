@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "data_structures.h"
 #include "first_pass.h"
 #include "first_pass_utility_functions.h"
 
@@ -34,16 +33,20 @@ of some, currently I decided to not return anything*/
 void first_pass(FILE *input_fp){
 	
 	char *line;
- 	int IC, DC, line_num, error, mi;
+ 	int IC, DC, line_num, error, mi, i;
  	machine_code *machine_code_arr;
-	
+ 	labels *head;
+ 	labels *current;
+ 	
+ 	head = NULL;
+ 	current = NULL;
  	
 	IC = 100; /* Instruction Counter */
 	DC = 0; /* Data Counter */
 	line_num = 1;
 	mi = 0; /*mi = machine_code_array index*/
+	i = 0; /*index for printing the machine code in a loop*/
 	error = FALSE; 
-	
 	
 	
 	line = (char *)calloc(sizeof(char), LINE_SIZE);
@@ -67,20 +70,27 @@ void first_pass(FILE *input_fp){
 				exit(1);
 			}*/
 			
-			line_decode(line, line_num, machine_code_arr, &mi, &error, &DC, &IC);
+			line_decode(line, line_num, machine_code_arr, &mi, &head, &current, &error, &DC, &IC);
 			if(error == TRUE){
-			printf("\nError!!\n");
+			/*printf("\nError!!\n");*/
 				error = FALSE;
 			}
-		
+			
 		}
 		
 		fgets(line, LINE_SIZE, input_fp);
 		line_num++;
 	}
 	
+	printf("Label List:\n");
+	print_label_list(head);
+	printf("\nmachine code:\n");
+	while(machine_code_arr[i].address != NULL){
+		printf("%s %s\n\n", machine_code_arr[i].address, machine_code_arr[i].code);
+		i++;
+	}
+	
 }
-
 
 
 	
@@ -101,14 +111,14 @@ void first_pass(FILE *input_fp){
 * statement, for each kind, it will send the line to an appropreate function in order to 
 * load the code written in the file, to the memory. 
 */
-void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *mi, int *error, int *DC, int *IC){
+void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *mi, labels **head, labels **current, int *error, int *DC, int *IC){
 	
 	char type, word[LINE_SIZE];
 	int i, wi; /*wi = word index*/
-	labels *head, *current;
+	/*labels *head, *current;
 	
  	head = NULL;
- 	current = NULL;
+ 	current = NULL;*/
  	i = 0;
 	wi = 0;
 	
@@ -131,32 +141,36 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 		wi = 0;
 		
 		if(is_label(word)){
-	
+		
 			word[strlen(word) - 1] = '\0';/*removing the ':' from the label*/
-			if(is_name_in_list(head, word)){
-				printf("%d:\tError - Multiple declarations of the same label.\n", line_num);
+			/*printf("the label is: %s\n", word);*/
+			if(is_name_in_list(*head, word)){
+				printf("Error in line %d - Multiple declarations of the same label.\n\n", line_num);
 				*error = TRUE;
 			}
 			type = line_type(line, i, line_num, error);
 			if(type == 'd'){/*if the current line is a directive statement.*/
-				append_label_node(&head, &current, word, *DC, FALSE, FALSE, FALSE);
+				append_label_node(head, current, word, *DC, FALSE, FALSE, FALSE);
 			}
 			else if(type == 'i'){/*if the current line is an instruction statement.*/
-				append_label_node(&head, &current, word, *IC, FALSE, FALSE, TRUE);
+				append_label_node(head, current, word, *IC, FALSE, FALSE, TRUE);
 			}
 			else if(type == 'x'){/*there is an error*/
 				*error = TRUE;
 				return;
 			}
+			/*printf("Label List:\n");
+		    print_label_list(head);*/
+		   /*printf("Im in line %d\n\n!!", 160);*/
 		
 		}
 		
 		else if(is_command(word)){
 			/*printf("%d: It's a command!!\n", line_num);*/
-			store_instruction_line(line, i, machine_code_arr, mi, word, &head, IC);/*storing the address of the command,
+			store_instruction_line(line, i, machine_code_arr, mi, word, head, IC);/*storing the address of the command,
 			and the addressing methods code that is set according to each operand*/
 			*mi = *mi + 1;
-			store_instruction_line_operands(line, i, machine_code_arr, mi, &head, IC);
+			store_instruction_line_operands(line, i, machine_code_arr, mi, head, IC);
 			break;
 		}
 		
@@ -186,6 +200,7 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 		wi = 0;
 		
 	}
+	
 	
 }
 
@@ -268,9 +283,9 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 		
 		else if(operand_is_label(word)){/*Direct addressing*/
 			/*Same label can't be declared twice*/
-			if(is_name_in_list(*head, word)){
+			/*if(is_name_in_list(head, word)){
 				printf("Error! The label %s exists in the label list!\n\n", word);
-			}
+			}*/
 			strcat(addressing_method, "01");/*01 is the binary code for direct addressing*/
 		}
 		
@@ -299,7 +314,7 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	
 	free(binary_base32);
 	
-	printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
+	/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 	*IC = *IC + 1;
 	/*reset addressing_method and opcode*/
 	while(ai < 6){
@@ -398,7 +413,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			strcpy(binary, strcat(int_to_8_binary(atoi(operand)), "00"));/*atoi(operand) is the number after the #, e.g. #5 --> atoi(operand) = 5*/
 			binary_base32 = binary_to_base32(binary);/*switching the binary expression to base 32*/
 			strcpy(machine_code_arr[*mi].code, binary_base32);
-			printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
+			/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 			/*printf("The number is: %d\n\n", atoi(operand));*/
 			
 			while(oi < LINE_SIZE && operand[oi] != '\0'){/*delete word*/
@@ -428,7 +443,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 					strcat(binary, "00");
 					binary_base32 = binary_to_base32(binary);
 					strcpy(machine_code_arr[*mi].code, binary_base32);
-					printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
+					/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 					*mi = *mi + 1;
 					is_first_operand = FALSE;
 				}
@@ -439,7 +454,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 					strcat(binary, "00");
 					binary_base32 = binary_to_base32(binary);
 					strcpy(machine_code_arr[*mi].code, binary_base32);
-					printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
+					/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 					*mi = *mi + 1;
 				}
 			}
@@ -460,7 +475,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 					strcat(binary, "00");
 					binary_base32 = binary_to_base32(binary);
 					strcpy(machine_code_arr[*mi].code, binary_base32);
-					printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
+					/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 					*mi = *mi + 1;
 				}
 			}
@@ -478,7 +493,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			free(decimal_base32);
 			/*saving the data (the data of the label is it's address where it's declared)*/
 			strcpy(machine_code_arr[*mi].code, "?");
-			printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
+			/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 			
 			*IC = *IC + 1;
 		}
@@ -494,7 +509,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			free(decimal_base32);
 			
 			strcpy(machine_code_arr[*mi].code, "?");
-			printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
+			/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 			
 			*IC = *IC + 1;
 			
@@ -515,7 +530,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 														  (like in the example table in the maman)*/
 			strcat(binary, "00");/*add 00 to the A.R.E field*/
 			strcpy(machine_code_arr[*mi].code, binary_to_base32(binary)); /*convert the binary code into base 32*/
-			printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);
+			/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 			
 			*IC = *IC + 1;
 		}
