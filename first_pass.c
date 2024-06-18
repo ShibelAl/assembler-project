@@ -42,7 +42,7 @@ void first_pass(FILE *input_fp){
  	current = NULL;
  	
 	IC = 100; /* Instruction Counter */
-	DC = 0; /* Data Counter */
+	DC = 122; /* Data Counter */
 	line_num = 1;
 	mi = 0; /*mi = machine_code_array index*/
 	i = 0; /*index for printing the machine code in a loop*/
@@ -176,14 +176,17 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 		
 		else if(strcmp(word, ".data") == 0){
 			/*printf("%d: It's .data!!\n", line_num);*/
+			store_data_line(line, i, machine_code_arr, mi, DC);
 		}
 		
 		else if(strcmp(word, ".string") == 0){
 			/*printf("%d: It's .string!!\n", line_num);*/
+			store_string_line(line, i, machine_code_arr, mi, DC);
 		}
 		
 		else if(strcmp(word, ".struct") == 0){
 			/*printf("%d: It's .struct!!\n", line_num);*/
+			store_struct_line(line, i, machine_code_arr, mi, DC);
 		}
 		
 		else if(strcmp(word, ".entry") == 0){
@@ -542,6 +545,308 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 
 
 	
+
+
+
+
+
+
+
+void store_data_line(char *line, int i, machine_code *machine_code_arr, int *mi, int *DC){
+	
+	char *delimiters = ", "; /* Delimiters: double quote, comma and space */
+    char *token;
+    int number;
+    char *decimal_base32, *binary_base32;
+    char data_expression[LINE_SIZE];
+    int di; /*di = data_expression index*/
+	
+    di = 0;
+    
+    while(line[i] == ' ' || line[i] == '\t'){/*skip spaces*/
+		i++;
+	}
+	
+	while(line[i] != '\n'){
+		data_expression[di] = line[i];
+		i++;
+		di++;
+	}
+	data_expression[di] = '\0';
+	
+    machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
+	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
+	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+		printf("\nmemory allocation failed\n");
+		exit(1);
+	}
+	
+    /* Get the first token */
+    token = strtok(data_expression, delimiters);
+    /*printf("the first token is: %s\n", token);*/
+	
+    /* Iterate over the rest of the tokens */
+    while(token != NULL) {
+    	
+        /* each token is a single letter */
+        number = char_to_int(token);
+        decimal_base32 = decimal_to_base32(*DC);
+		strcpy(machine_code_arr[*mi].address, decimal_base32);	
+		/*converting the letter into binary, and then converting the binary expression to base32*/
+		binary_base32 = binary_to_base32(int_to_10_binary(number));
+		/*printf("the binary number after int_to_10_binary is: %s\n\n", int_to_10_binary(number));*/
+		strcpy(machine_code_arr[*mi].code, binary_base32);
+        
+        printf("Number: %d\n", number);
+		printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);
+        /* Get the next token */
+        token = strtok(NULL, delimiters);
+       /* printf("token is: %s\n", token);*/
+        *mi = *mi + 1;
+        machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
+		machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
+		if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+			printf("\nmemory allocation failed\n");
+			exit(1);
+		}
+		*DC = *DC + 1;
+    }
+    
+/*    	decimal_base32 = decimal_to_base32(*DC);
+		strcpy(machine_code_arr[*mi].address, decimal_base32);	
+		binary_base32 = binary_to_base32(int_to_10_binary(0));
+		strcpy(machine_code_arr[*mi].code, binary_base32);
+		*mi = *mi + 1;*/
+		
+		
+		/*maybe I should free the allocated memory for the machine_code_arr..*/
+		
+}
+
+
+
+
+
+
+void store_string_line(char *line, int i, machine_code *machine_code_arr, int *mi, int *DC){
+	
+	char *delimiters = "\", "; /* Delimiters: double quote, comma and space */
+    char *token;
+    char letter;
+    char *decimal_base32, *binary_base32;
+    char string_expression[LINE_SIZE];
+    int si; /*si = string_expression index*/
+    int ti; /*ti: token index*/
+	
+    si = 0;
+    ti = 0;
+    
+    while(line[i] == ' ' || line[i] == '\t'){/*skip spaces*/
+		i++;
+	}
+    
+    while(line[i] != '\n'){
+		string_expression[si] = line[i];
+		i++;
+		si++;
+	}
+    string_expression[si] = '\0';
+    
+    machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
+	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
+	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+		printf("\nmemory allocation failed\n");
+		exit(1);
+	}
+				 
+    /* Get the first token */
+    token = strtok(string_expression, delimiters);
+	
+    /* Iterate over the rest of the tokens */
+    while(token[ti] != '\0') {
+        /* each token is a single letter */
+        letter = token[ti];
+        ti++;
+        decimal_base32 = decimal_to_base32(*DC);
+		strcpy(machine_code_arr[*mi].address, decimal_base32);	
+		/*converting the letter into binary, and then converting the binary expression to base32*/
+		binary_base32 = binary_to_base32(int_to_10_binary((int)letter));
+		strcpy(machine_code_arr[*mi].code, binary_base32);
+        
+        printf("Letter: %c\n", letter);
+		printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);
+		
+        *mi = *mi + 1;
+        machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
+		machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
+		if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+			printf("\nmemory allocation failed\n");
+			exit(1);
+		}
+		*DC = *DC + 1;
+    }
+   
+    	decimal_base32 = decimal_to_base32(*DC);
+		strcpy(machine_code_arr[*mi].address, decimal_base32);	
+		/*putting 0 in int_to_10_binary because of the null terminator - to be 0000000000*/
+		printf("Letter: null\n");
+		binary_base32 = binary_to_base32(int_to_10_binary(0));
+		strcpy(machine_code_arr[*mi].code, binary_base32);
+		
+		printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);
+		
+		*mi = *mi + 1;
+		*DC = *DC + 1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void store_struct_line(char *line, int i, machine_code *machine_code_arr, int *mi, int *DC){
+	char *delimiters = "\", "; /* Delimiters: double quote, comma and space */
+    char *token;
+    char letter;
+    int number;
+    char *decimal_base32, *binary_base32;
+    char string_expression[LINE_SIZE];
+    int si; /*si = string_expression index*/
+    int ti; /*ti: token index*/
+	
+    si = 0;
+    ti = 0;
+    
+    while(line[i] == ' ' || line[i] == '\t'){/*skip spaces*/
+		i++;
+	}
+    
+    while(line[i] != '\n'){
+		string_expression[si] = line[i];
+		i++;
+		si++;
+	}
+    
+    machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
+	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
+	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+		printf("\nmemory allocation failed\n");
+		exit(1);
+	}
+	
+	/*--- Here is the integer field ---*/
+				 
+    /* Get the first token */
+    token = strtok(string_expression, delimiters);
+    printf("the first token is: %s\n", token);
+    
+    number = char_to_int(token);
+    decimal_base32 = decimal_to_base32(*DC);
+	strcpy(machine_code_arr[*mi].address, decimal_base32);	
+	/*converting the letter into binary, and then converting the binary expression to base32*/
+	binary_base32 = binary_to_base32(int_to_10_binary(number));
+	/*printf("the binary number after int_to_10_binary is: %s\n\n", int_to_10_binary(number));*/
+	strcpy(machine_code_arr[*mi].code, binary_base32);
+    
+    printf("Number: %d\n", number);
+	printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);
+    /* Get the next token */
+    token = strtok(NULL, delimiters);
+   /* printf("token is: %s\n", token);*/
+    *mi = *mi + 1;
+    machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
+	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
+	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+		printf("\nmemory allocation failed\n");
+		exit(1);
+	}
+	*DC = *DC + 1;
+	
+	/*--- Here is the string field ---*/
+	
+    /* Iterate over the rest of the tokens */
+    while(token[ti] != '\0') {
+        /* each token is a single letter */
+        letter = token[ti];
+        ti++;
+        decimal_base32 = decimal_to_base32(*DC);
+		strcpy(machine_code_arr[*mi].address, decimal_base32);	
+		/*converting the letter into binary, and then converting the binary expression to base32*/
+		binary_base32 = binary_to_base32(int_to_10_binary((int)letter));
+		strcpy(machine_code_arr[*mi].code, binary_base32);
+        /*here is my code*/
+        
+        printf("Letter: %c\n", letter);
+		printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);
+        /* Get the next token */
+        *mi = *mi + 1;
+        machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
+		machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
+		if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+			printf("\nmemory allocation failed\n");
+			exit(1);
+		}
+		*DC = *DC + 1;
+    }
+   
+    	decimal_base32 = decimal_to_base32(*DC);
+		strcpy(machine_code_arr[*mi].address, decimal_base32);	
+		/*putting 0 in int_to_10_binary because of the null terminator - to be 0000000000*/
+		printf("Letter: null\n");
+		binary_base32 = binary_to_base32(int_to_10_binary(0));
+		strcpy(machine_code_arr[*mi].code, binary_base32);
+		
+		printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);
+		
+		*mi = *mi + 1;
+		*DC = *DC + 1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
