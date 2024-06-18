@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "defines.h"
 #include "preprocessor.h"
 #include "first_pass.h"
+
 
 
 int main(int argc, char *argv[]){
@@ -11,6 +11,13 @@ int main(int argc, char *argv[]){
 	FILE *input_fp, *output_fp; /*fp: file pointer*/
 	char *as_file; /*as_file refers to the source file, that ends with .as*/
 	char *am_file; /*am_file refers to the new file generated after macro expantion*/
+    /*labels *head;
+ 	labels *current;
+ 	
+ 	head = NULL;
+ 	current = NULL;*/
+    
+    
     
 	/*if the user didn't provide any file*/
 	if(argc == 1){
