@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h> /*for isdigit() in char_to_int(...)*/
 #include "data_structures.h"
 #include "first_pass_utility_functions.h"
 
@@ -426,5 +427,42 @@ int number_of_registers(char *line){
 	}
 	return count;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+int char_to_int(char* str){
+    int result = 0;  /* To store the final integer value */
+    int sign = 1;    /* To handle the sign of the number */
+    int i = 0;       /* Index for iterating through the string */
+
+    /* Check if the first character is a negative sign */
+    if (str[0] == '-') {
+        sign = -1;  /* Set the sign to negative */
+        i = 1;      /* Start from the next character */
+    }
+
+    /* Loop through the rest of the string */
+    for (; str[i] != '\0'; i++){
+        if (!isdigit(str[i])){
+            printf("Invalid character in input string: %c\n", str[i]);
+            return 0;  /* Return 0 for invalid input */
+        }
+        result = result * 10 + (str[i] - '0');  /* Convert char to int and add to result */
+    }
+
+    return sign * result;  /* Apply the sign to the result */
+}
+
+
+
 
 
