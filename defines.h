@@ -12,6 +12,7 @@
 #define TEN_BITS 11/*it's 10 bits + 1 the null terminator*/
 #define EIGHT_BITS 9/*it's 8 bits + 1 the null terminator*/
 #define FOUR_BITS 5/*it's 4 bits + 1 the null terminator*/
+#define LABEL_NOT_EXIST -1 
 
 enum boolean{FALSE, TRUE};
 
