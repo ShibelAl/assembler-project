@@ -435,11 +435,14 @@ int number_of_registers(char *line){
 
 
 
-
-
-
-
-int char_to_int(char* str){
+/*Parameters:
+* str - a string that represents a number (positive or negative)
+* 
+* Returns:
+* an int number that is the number in the string form.
+* for example if str = "-9" then it returns -9 as an int number.
+*/
+int string_to_int(char* str){
     int result = 0;  /* To store the final integer value */
     int sign = 1;    /* To handle the sign of the number */
     int i = 0;       /* Index for iterating through the string */
@@ -461,6 +464,21 @@ int char_to_int(char* str){
 
     return sign * result;  /* Apply the sign to the result */
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

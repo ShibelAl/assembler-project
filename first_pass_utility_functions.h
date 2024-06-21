@@ -11,4 +11,4 @@ char* int_to_10_binary(int num);
 char* int_to_8_binary(int num);
 char* int_to_4_binary(int num);
 int number_of_registers(char *line);
-int char_to_int(char* str);
+int string_to_int(char* str);
