@@ -42,6 +42,9 @@ void append_label_node(labels **head, labels **current, char *name, int address,
 void print_label_list(labels* head);
 void free_label_list(labels* head);
 int is_name_in_list(labels* head, char *name);
+void update_label_fields(labels *head, const char *name, int is_extern, int is_entry, int is_instruction);
+int is_extern_label(labels *head, char *name);
+int is_entry_label(labels *head, char *name);
 
 
 

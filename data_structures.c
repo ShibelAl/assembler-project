@@ -4,7 +4,6 @@
 #include "data_structures.h"
 
 
-
 opcode opcodes_table[] = {
 
 	{"mov", "0000", 2, {0,1,2,3,-1}, {1,2,3,-1}},
@@ -44,7 +43,7 @@ base32 base32_numbers = {{
 /*------------------ Implementing label_list ------------------*/
 
 /* Create a new node with a given name */
-labels* create_label_node(const char *name, int address, int is_extern, int is_entry, int is_instruction) {
+labels* create_label_node(const char *name, int address, int is_extern, int is_entry, int is_instruction){
     labels* new_node = (labels*)malloc(sizeof(labels));
     if(new_node == NULL){
         printf("Memory allocation failed\n");
@@ -66,6 +65,8 @@ labels* create_label_node(const char *name, int address, int is_extern, int is_e
 }
 
 
+
+
 /* Appends a new label node to the end of the linked list */
 void append_label_node(labels **head, labels **current, char *name, int address, int is_extern, int is_entry, int is_instruction){
     if (*head == NULL) {
@@ -82,14 +83,36 @@ void append_label_node(labels **head, labels **current, char *name, int address,
 }
 
 
-/* Function to print all the labels in the linked list */
-void print_label_list(labels *head){
-    while(head != NULL){
-        printf("Name: %s, Address: %d, is_extern: %d, is_entry: %d, is_instruction: %d\n",
-        	head -> name, head -> address, head -> is_extern, head -> is_entry, head -> is_instruction);
-        head = head -> next;
-	}
+
+
+
+/* updates label fields by name */
+void update_label_fields(labels *head, const char *name, int is_extern, int is_entry, int is_instruction){
+    while (head != NULL) {
+        if (strcmp(head->name, name) == 0) {
+            head->is_extern = is_extern;
+            head->is_entry = is_entry;
+            head->is_instruction = is_instruction;
+            return;
+        }
+        head = head->next;
+    }
+    printf("Label name '%s' not found in the list.\n", name);
 }
+
+
+
+
+
+/* Function to print all the labels in the linked list */
+void print_label_list(labels *head) {
+    while (head != NULL) {
+        printf("Name: %s, Address: %d, is_extern: %d, is_entry: %d, is_instruction: %d\n",
+               head->name, head->address, head->is_extern, head->is_entry, head->is_instruction);
+        head = head->next;
+    }
+}
+
 
 
 
@@ -122,10 +145,63 @@ int is_name_in_list(labels *head, char *name){
 
 
 
+/*Parameters:
+* head: the head of a labels linked list
+* name: the name of the label (e.g. LOOP, W)
+* 
+* Returns: TRUE if the label is an extern, and FALSE if its entry,
+* and LABEL_NOT_EXIST if the label does not exist.
+*/
+int is_extern_label(labels *head, char *name){
+	
+	int label_exists = FALSE;
+	
+    while(head != NULL){
+        if(strcmp(head -> name, name) == 0){
+        	label_exists = TRUE;
+            if(head -> is_extern == TRUE){
+            	return TRUE;
+            }
+        }
+        head = head -> next;
+    }
+    if(label_exists){
+    	return FALSE;
+    }
+    else return LABEL_NOT_EXIST;
+    
+}
 
 
 
 
+
+/*Parameters:
+* head: the head of a labels linked list
+* name: the name of the label (e.g. LOOP, W)
+* 
+* Returns: TRUE if the label is an entry, and FALSE if its extern, 
+* and LABEL_NOT_EXITST if the label does not exist.
+*/
+int is_entry_label(labels *head, char *name){
+
+	int label_exists = FALSE;	
+	
+    while(head != NULL){
+        if(strcmp(head -> name, name) == 0){
+        	label_exists = TRUE;
+            if(head -> is_entry == TRUE){
+            	return TRUE;
+            }
+        }
+        head = head -> next;
+    }
+    
+    if(label_exists){
+    	return FALSE;
+    }
+    else return LABEL_NOT_EXIST;
+}
 
 
 
