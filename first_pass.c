@@ -145,15 +145,37 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 			word[strlen(word) - 1] = '\0';/*removing the ':' from the label*/
 			/*printf("the label is: %s\n", word);*/
 			if(is_name_in_list(*head, word)){
-				printf("Error in line %d - Multiple declarations of the same label.\n\n", line_num);
-				*error = TRUE;
+				/*if the label is in the list, and it is not an entry on an extern, then it's a 
+				regular label that entered the list more that once*/
+				if(!is_entry_label(*head, word) && !is_extern_label(*head, word)){
+					printf("Error in line %d - Multiple declarations of the same label.\n\n", line_num);
+					*error = TRUE;				
+				}
 			}
 			type = line_type(line, i, line_num, error);
 			if(type == 'd'){/*if the current line is a directive statement.*/
-				append_label_node(head, current, word, *DC, FALSE, FALSE, FALSE);
+				/*if the label does not exist in the label list, then append it to the label list*/
+				if(is_entry_label(*head, word) == LABEL_NOT_EXIST && is_extern_label(*head, word) == LABEL_NOT_EXIST){
+					append_label_node(head, current, word, *DC, FALSE, FALSE, FALSE);			
+				}
+				else if(is_entry_label(*head, word) == TRUE){
+					update_label_fields(*head, word, FALSE, TRUE, FALSE);
+				}
+				else if(is_extern_label(*head, word) == TRUE){
+					update_label_fields(*head, word, TRUE, FALSE, FALSE);
+				}
 			}
 			else if(type == 'i'){/*if the current line is an instruction statement.*/
-				append_label_node(head, current, word, *IC, FALSE, FALSE, TRUE);
+				/*if the label does not exist in the label list, then append it to the label list*/
+				if(is_entry_label(*head, word) == LABEL_NOT_EXIST && is_extern_label(*head, word) == LABEL_NOT_EXIST){
+					append_label_node(head, current, word, *DC, FALSE, FALSE, TRUE);			
+				}
+				else if(is_entry_label(*head, word) == TRUE){
+					update_label_fields(*head, word, FALSE, TRUE, TRUE);
+				}
+				else if(is_extern_label(*head, word) == TRUE){
+					update_label_fields(*head, word, TRUE, FALSE, TRUE);
+				}
 			}
 			else if(type == 'x'){/*there is an error*/
 				*error = TRUE;
@@ -189,12 +211,58 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 			store_struct_line(line, i, machine_code_arr, mi, DC);
 		}
 		
+		/*if there is a declaration that the label is entry*/
 		else if(strcmp(word, ".entry") == 0){
-			/*printf("%d: It's .struct!!\n", line_num);*/
+			
+			while(line[i] == ' ' || line[i] == '\t'){/* skip spaces */
+				i++;
+			}
+			
+			/*take the first word of the line*/
+			while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != EOF && line[i] != ','){
+				word[wi] = line[i];
+				wi++;
+				i++;
+			}
+			word[wi] = '\0';
+			wi = 0;
+			
+			/*check if the label have been declared as extern before, so if that happened,
+			the assembler will not append the label to the label list*/
+			if(is_extern_label(*head, word) == TRUE){
+				printf("Error The label %s in line %d have been declared as extern previously.\n\n", word, line_num);
+			}
+			else{
+				append_label_node(head, current, word, *DC, FALSE, TRUE, FALSE);			
+			}
 		}
 		
+		/*if there is a declaration that the label is extern*/
 		else if(strcmp(word, ".extern") == 0){
-			/*printf("%d: It's .struct!!\n", line_num);*/
+			
+			while(line[i] == ' ' || line[i] == '\t'){/* skip spaces */
+				i++;
+			}
+			
+			/*take the first word of the line*/
+			while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != EOF && line[i] != ','){
+				word[wi] = line[i];
+				wi++;
+				i++;
+			}
+			word[wi] = '\0';
+			wi = 0;
+			
+			/*check if the label have been declared as entry before, so if that happened,
+			the assembler will not append the label to the label list*/
+			if(is_entry_label(*head, word) == TRUE){
+				printf("Error The label %s in line %d have been declared as entry previously.\n\n", word, line_num);
+			}
+			else{
+				append_label_node(head, current, word, *DC, TRUE, FALSE, FALSE);
+			}
+			/*printf("%s Is an extern label!!\n\n", word);*/
+			
 		}
 		
 		while(wi < LINE_SIZE && word[wi] != '\0'){/*delete word*/
@@ -588,8 +656,7 @@ void store_data_line(char *line, int i, machine_code *machine_code_arr, int *mi,
     /* Iterate over the rest of the tokens */
     while(token != NULL) {
     	
-        /* each token is a single letter */
-        number = char_to_int(token);
+        number = string_to_int(token);
         decimal_base32 = decimal_to_base32(*DC);
 		strcpy(machine_code_arr[*mi].address, decimal_base32);	
 		/*converting the letter into binary, and then converting the binary expression to base32*/
@@ -597,8 +664,8 @@ void store_data_line(char *line, int i, machine_code *machine_code_arr, int *mi,
 		/*printf("the binary number after int_to_10_binary is: %s\n\n", int_to_10_binary(number));*/
 		strcpy(machine_code_arr[*mi].code, binary_base32);
         
-        printf("Number: %d\n", number);
-		printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);
+        /*printf("Number: %d\n", number);*/
+		/*printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);*/
         /* Get the next token */
         token = strtok(NULL, delimiters);
        /* printf("token is: %s\n", token);*/
@@ -673,8 +740,8 @@ void store_string_line(char *line, int i, machine_code *machine_code_arr, int *m
 		binary_base32 = binary_to_base32(int_to_10_binary((int)letter));
 		strcpy(machine_code_arr[*mi].code, binary_base32);
         
-        printf("Letter: %c\n", letter);
-		printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);
+        /*printf("Letter: %c\n", letter);
+		printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);*/
 		
         *mi = *mi + 1;
         machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
@@ -689,11 +756,11 @@ void store_string_line(char *line, int i, machine_code *machine_code_arr, int *m
     	decimal_base32 = decimal_to_base32(*DC);
 		strcpy(machine_code_arr[*mi].address, decimal_base32);	
 		/*putting 0 in int_to_10_binary because of the null terminator - to be 0000000000*/
-		printf("Letter: null\n");
+		/*printf("Letter: null\n");*/
 		binary_base32 = binary_to_base32(int_to_10_binary(0));
 		strcpy(machine_code_arr[*mi].code, binary_base32);
 		
-		printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);
+		/*printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);*/
 		
 		*mi = *mi + 1;
 		*DC = *DC + 1;
@@ -747,18 +814,18 @@ void store_struct_line(char *line, int i, machine_code *machine_code_arr, int *m
 				 
     /* Get the first token */
     token = strtok(string_expression, delimiters);
-    printf("the first token is: %s\n", token);
+    /*printf("the first token is: %s\n", token);*/
     
-    number = char_to_int(token);
+    number = string_to_int(token);
     decimal_base32 = decimal_to_base32(*DC);
 	strcpy(machine_code_arr[*mi].address, decimal_base32);	
 	/*converting the letter into binary, and then converting the binary expression to base32*/
 	binary_base32 = binary_to_base32(int_to_10_binary(number));
 	/*printf("the binary number after int_to_10_binary is: %s\n\n", int_to_10_binary(number));*/
 	strcpy(machine_code_arr[*mi].code, binary_base32);
-    
-    printf("Number: %d\n", number);
-	printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);
+	    
+    /*printf("Number: %d\n", number);
+	printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);*/
     /* Get the next token */
     token = strtok(NULL, delimiters);
    /* printf("token is: %s\n", token);*/
@@ -785,8 +852,9 @@ void store_struct_line(char *line, int i, machine_code *machine_code_arr, int *m
 		strcpy(machine_code_arr[*mi].code, binary_base32);
         /*here is my code*/
         
-        printf("Letter: %c\n", letter);
-		printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);
+        /*printf("Letter: %c\n", letter);
+		printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);*/
+		
         /* Get the next token */
         *mi = *mi + 1;
         machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
@@ -801,11 +869,11 @@ void store_struct_line(char *line, int i, machine_code *machine_code_arr, int *m
     	decimal_base32 = decimal_to_base32(*DC);
 		strcpy(machine_code_arr[*mi].address, decimal_base32);	
 		/*putting 0 in int_to_10_binary because of the null terminator - to be 0000000000*/
-		printf("Letter: null\n");
+		/*printf("Letter: null\n");*/
 		binary_base32 = binary_to_base32(int_to_10_binary(0));
 		strcpy(machine_code_arr[*mi].code, binary_base32);
 		
-		printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);
+		/*printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);*/
 		
 		*mi = *mi + 1;
 		*DC = *DC + 1;
