@@ -12,3 +12,4 @@ char* int_to_8_binary(int num);
 char* int_to_4_binary(int num);
 int number_of_registers(char *line);
 int string_to_int(char* str);
+int base32_to_decimal(char *base32);

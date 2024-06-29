@@ -471,12 +471,72 @@ int string_to_int(char* str){
 
 
 
+/*Parameters: 
+* base32: a string representing a number in base 32.
+* 
+* Returns:
+* The decimal representation of the base 32 number.
+* 
+* This function converts a base 32 encoded string to a decimal integer.
+*/
+int base32_to_decimal(char *base32){
+    int decimal = 0; /* Initialize the result variable to store the decimal value */
+    int length = strlen(base32); /* Get the length of the base32 input string */
+    char base32_symbols[] = "!@#$%^&*<>abcdefghijklmnopqrstuv";
+    int i, j, value;
+
+    for (i = 0; i < length; i++) {
+        value = -1; /* Initialize value to -1 to detect invalid characters */
+        /* Find the value of the current base32 character */
+        for (j = 0; j < 32; j++) {
+            if (base32[i] == base32_symbols[j]) {
+                value = j; /* Assign the index of the symbol to value */
+                break; /* Exit the inner loop once the character is found */
+            }
+        }
+        if (value == -1) { /* Check if the character was not found in base32_symbols */
+            printf("Invalid character found in base32 input.\n");
+            exit(1);
+        }
+        
+        /* Update the decimal value by shifting the previous value left by 32 (base 32) and adding the current digit's value */
+        decimal = decimal * 32 + value;
+    }
+
+    return decimal;
+}
 
 
 
 
 
 
+
+/*Parameters:
+* machine_code_arr: the array which stores the machine code and their addresses
+* according to the IC and DC.
+* 
+* final_ic: is the final ic that the program reached
+* 
+* This function updates the DC to start after the IC finished, it builds a new machine code array 
+* and itirates over the original machine_code_arr.
+* 
+*/
+/*void update_dc(machine_code *machine_code_arr, int final_ic){
+	int dc;
+	int i;
+	int length = sizeof(machine_code_arr) / sizeof(machine_code_arr[0]);
+	dc = ic + 1;
+	
+	for(i = 0; i < length ; i++){
+		if(machine_code_arr[i].is_instruction == FALSE){
+			
+		}
+	}
+}
+
+
+when printing the */
 
 
 
