@@ -63,13 +63,6 @@ void first_pass(FILE *input_fp){
 	while(!feof(input_fp)){
 		
 		if(!is_empty_line(line) && line[0] != ';'){/*if line is not empty nor it's a comment*/
-			/*memory allocation for the current element*/
-			/*machine_code_arr[mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
-			machine_code_arr[mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
-			if(machine_code_arr[mi].address == NULL || machine_code_arr[mi].code == NULL){
-				printf("\nmemory allocation failed\n");
-				exit(1);
-			}*/
 			
 			line_decode(line, line_num, machine_code_arr, &mi, &head, &current, &error, &DC, &IC);
 			if(error == TRUE){
@@ -220,14 +213,10 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 				*error = TRUE;
 				return;
 			}
-			/*printf("Label List:\n");
-		    print_label_list(head);*/
-		   /*printf("Im in line %d\n\n!!", 160);*/
 		
 		}
 		
 		else if(is_command(word)){
-			/*printf("%d: It's a command!!\n", line_num);*/
 			store_instruction_line(line, i, machine_code_arr, mi, word, head, IC);/*storing the address of the command,
 			and the addressing methods code that is set according to each operand*/
 			*mi = *mi + 1;
@@ -236,19 +225,16 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 		}
 		
 		else if(strcmp(word, ".data") == 0){
-			/*printf("%d: It's .data!!\n", line_num);*/
 			label_address = base32_to_decimal(machine_code_arr[*mi-1].address) + 1;
 			store_data_line(line, i, machine_code_arr, mi, &label_address);
 		}
 		
 		else if(strcmp(word, ".string") == 0){
-			/*printf("%d: It's .string!!\n", line_num);*/
 			label_address = base32_to_decimal(machine_code_arr[*mi-1].address) + 1;
 			store_string_line(line, i, machine_code_arr, mi, &label_address);
 		}
 		
 		else if(strcmp(word, ".struct") == 0){
-			/*printf("%d: It's .struct!!\n", line_num);*/
 			label_address = base32_to_decimal(machine_code_arr[*mi-1].address) + 1;
 			store_struct_line(line, i, machine_code_arr, mi, &label_address);
 		}
@@ -382,8 +368,6 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 		word[wi] = '\0';
 		wi = 0;
 		
-		/**IC = *IC + 1;*//*new instruction operand, so new IC.*/
-		
 		/*I arranged these if statements like that for a reason
 		(for the similarity between the direct addressing and accessing struct addressing)*/
 		if(word[0] == '#'){/*Immediate addressing*/
@@ -397,10 +381,6 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 		}
 		
 		else if(operand_is_label(word)){/*Direct addressing*/
-			/*Same label can't be declared twice*/
-			/*if(is_name_in_list(head, word)){
-				printf("Error! The label %s exists in the label list!\n\n", word);
-			}*/
 			strcat(addressing_method, "01");/*01 is the binary code for direct addressing*/
 		}
 		
@@ -429,7 +409,6 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	
 	free(binary_base32);
 	
-	/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 	*IC = *IC + 1;
 	/*reset addressing_method and opcode*/
 	while(ai < 6){
@@ -479,13 +458,6 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 	oi = 0;/*oi = operand index*/
 	is_first_operand = TRUE;/*to differentiate between the first and second operand*/		
 	
-	/*maybe I should put that inside of the loop so I can allocate memory for each word*/
-	/*machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
-	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
-	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
-		printf("\nmemory allocation failed\n");
-		exit(1);
-	}*/
 	while(line[i] != '\n' && line[i] != EOF){
 		
 		while(line[i] == ' ' || line[i] == '\t' || line[i] == ','){
@@ -531,8 +503,6 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			strcpy(binary, strcat(int_to_8_binary(atoi(operand)), "00"));/*atoi(operand) is the number after the #, e.g. #5 --> atoi(operand) = 5*/
 			binary_base32 = binary_to_base32(binary);/*switching the binary expression to base 32*/
 			strcpy(machine_code_arr[*mi].code, binary_base32);
-			/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
-			/*printf("The number is: %d\n\n", atoi(operand));*/
 			
 			while(oi < LINE_SIZE && operand[oi] != '\0'){/*delete word*/
 				operand[oi] = '\0';
@@ -561,7 +531,6 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 					strcat(binary, "00");
 					binary_base32 = binary_to_base32(binary);
 					strcpy(machine_code_arr[*mi].code, binary_base32);
-					/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 					*mi = *mi + 1;
 					is_first_operand = FALSE;
 				}
@@ -572,7 +541,6 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 					strcat(binary, "00");
 					binary_base32 = binary_to_base32(binary);
 					strcpy(machine_code_arr[*mi].code, binary_base32);
-					/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 					*mi = *mi + 1;
 				}
 			}
@@ -593,7 +561,6 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 					strcat(binary, "00");
 					binary_base32 = binary_to_base32(binary);
 					strcpy(machine_code_arr[*mi].code, binary_base32);
-					/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 					*mi = *mi + 1;
 				}
 			}
@@ -611,7 +578,6 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			free(decimal_base32);
 			/*saving the data (the data of the label is it's address where it's declared)*/
 			strcpy(machine_code_arr[*mi].code, "?");
-			/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 			
 			*IC = *IC + 1;
 		}
@@ -627,7 +593,6 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			free(decimal_base32);
 			
 			strcpy(machine_code_arr[*mi].code, "?");
-			/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 			
 			*IC = *IC + 1;
 			
@@ -652,7 +617,6 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 														  (like in the example table in the maman)*/
 			strcat(binary, "00");/*add 00 to the A.R.E field*/
 			strcpy(machine_code_arr[*mi].code, binary_to_base32(binary)); /*convert the binary code into base 32*/
-			/*printf("%s %s		mi = %d, IC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *IC);*/
 			
 			*IC = *IC + 1;
 		}
@@ -705,7 +669,6 @@ void store_data_line(char *line, int i, machine_code *machine_code_arr, int *mi,
 	
     /* Get the first token */
     token = strtok(data_expression, delimiters);
-    /*printf("the first token is: %s\n", token);*/
 	
     /* Iterate over the rest of the tokens */
     while(token != NULL) {
@@ -715,11 +678,8 @@ void store_data_line(char *line, int i, machine_code *machine_code_arr, int *mi,
 		strcpy(machine_code_arr[*mi].address, decimal_base32);	
 		/*converting the letter into binary, and then converting the binary expression to base32*/
 		binary_base32 = binary_to_base32(int_to_10_binary(number));
-		/*printf("the binary number after int_to_10_binary is: %s\n\n", int_to_10_binary(number));*/
 		strcpy(machine_code_arr[*mi].code, binary_base32);
-        
-        /*printf("Number: %d\n", number);*/
-		/*printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);*/
+      
         /* Get the next token */
         token = strtok(NULL, delimiters);
        /* printf("token is: %s\n", token);*/
@@ -735,13 +695,6 @@ void store_data_line(char *line, int i, machine_code *machine_code_arr, int *mi,
 		*(machine_code_arr[*mi].is_instruction) = FALSE;
 		*DC = *DC + 1;
     }
-    
-/*    	decimal_base32 = decimal_to_base32(*DC);
-		strcpy(machine_code_arr[*mi].address, decimal_base32);	
-		binary_base32 = binary_to_base32(int_to_10_binary(0));
-		strcpy(machine_code_arr[*mi].code, binary_base32);
-		*mi = *mi + 1;*/
-		
 		
 		/*maybe I should free the allocated memory for the machine_code_arr..*/
 		
@@ -799,9 +752,6 @@ void store_string_line(char *line, int i, machine_code *machine_code_arr, int *m
 		/*converting the letter into binary, and then converting the binary expression to base32*/
 		binary_base32 = binary_to_base32(int_to_10_binary((int)letter));
 		strcpy(machine_code_arr[*mi].code, binary_base32);
-        
-        /*printf("Letter: %c\n", letter);
-		printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);*/
 		
         *mi = *mi + 1;
         machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
@@ -822,8 +772,6 @@ void store_string_line(char *line, int i, machine_code *machine_code_arr, int *m
 		/*printf("Letter: null\n");*/
 		binary_base32 = binary_to_base32(int_to_10_binary(0));
 		strcpy(machine_code_arr[*mi].code, binary_base32);
-		
-		/*printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);*/
 		
 		*mi = *mi + 1;
 		*DC = *DC + 1;
@@ -890,8 +838,6 @@ void store_struct_line(char *line, int i, machine_code *machine_code_arr, int *m
 	/*printf("the binary number after int_to_10_binary is: %s\n\n", int_to_10_binary(number));*/
 	strcpy(machine_code_arr[*mi].code, binary_base32);
 	    
-    /*printf("Number: %d\n", number);
-	printf("%s %s		mi = %d, DC = %d\n\n", machine_code_arr[*mi].address, machine_code_arr[*mi].code, *mi, *DC);*/
     /* Get the next token */
     token = strtok(NULL, delimiters);
    /* printf("token is: %s\n", token);*/
