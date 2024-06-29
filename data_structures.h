@@ -37,12 +37,12 @@ typedef struct label_list{
   
 }labels;
 
-labels* create_label_node(const char *name, int address, int is_extern, int is_entry, int is_instruction);
+labels* create_label_node(char *name, int address, int is_extern, int is_entry, int is_instruction);
 void append_label_node(labels **head, labels **current, char *name, int address, int is_extern, int is_entry, int is_instruction);
 void print_label_list(labels* head);
 void free_label_list(labels* head);
 int is_name_in_list(labels* head, char *name);
-void update_label_fields(labels *head, const char *name, int is_extern, int is_entry, int is_instruction);
+void update_label_fields(labels *head, char *name, int address, int is_extern, int is_entry, int is_instruction);
 int is_extern_label(labels *head, char *name);
 int is_entry_label(labels *head, char *name);
 
@@ -106,6 +106,7 @@ typedef struct address_code_table{
 	
 	char *address;
 	char *code;
+	int *is_instruction;
 	
 }machine_code;
 

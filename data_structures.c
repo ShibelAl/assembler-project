@@ -43,7 +43,7 @@ base32 base32_numbers = {{
 /*------------------ Implementing label_list ------------------*/
 
 /* Create a new node with a given name */
-labels* create_label_node(const char *name, int address, int is_extern, int is_entry, int is_instruction){
+labels* create_label_node(char *name, int address, int is_extern, int is_entry, int is_instruction){
     labels* new_node = (labels*)malloc(sizeof(labels));
     if(new_node == NULL){
         printf("Memory allocation failed\n");
@@ -87,9 +87,10 @@ void append_label_node(labels **head, labels **current, char *name, int address,
 
 
 /* updates label fields by name */
-void update_label_fields(labels *head, const char *name, int is_extern, int is_entry, int is_instruction){
+void update_label_fields(labels *head, char *name, int address, int is_extern, int is_entry, int is_instruction){
     while (head != NULL) {
         if (strcmp(head->name, name) == 0) {
+	        head->address = address;
             head->is_extern = is_extern;
             head->is_entry = is_entry;
             head->is_instruction = is_instruction;
