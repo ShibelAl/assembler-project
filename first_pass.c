@@ -33,7 +33,8 @@ of some, currently I decided to not return anything*/
 void first_pass(FILE *input_fp){
 	
 	char *line;
- 	int IC, DC, line_num, error, mi, i;
+	char *decimal_base32;
+ 	int IC, DC, line_num, error, mi, i, final_ic;
  	machine_code *machine_code_arr;
  	labels *head;
  	labels *current;
@@ -42,7 +43,7 @@ void first_pass(FILE *input_fp){
  	current = NULL;
  	
 	IC = 100; /* Instruction Counter */
-	DC = 122; /* Data Counter */
+	DC = 0; /* Data Counter */
 	line_num = 1;
 	mi = 0; /*mi = machine_code_array index*/
 	i = 0; /*index for printing the machine code in a loop*/
@@ -82,13 +83,49 @@ void first_pass(FILE *input_fp){
 		line_num++;
 	}
 	
-	printf("Label List:\n");
-	print_label_list(head);
-	printf("\nmachine code:\n");
+	/* itirates over the machine code array to reach the final ic */
 	while(machine_code_arr[i].address != NULL){
-		printf("%s %s\n\n", machine_code_arr[i].address, machine_code_arr[i].code);
+		if(*machine_code_arr[i].is_instruction == TRUE){
+			final_ic = base32_to_decimal(machine_code_arr[i].address);
+		}
 		i++;
 	}
+	
+	i = 0;
+	DC = final_ic + 1;
+	/* Updating the DC. For each element in the array that is data element (not in instruction line)
+	put the new DC, that starts from final_ic, to make the data after the instructions. */
+	while(machine_code_arr[i].address != NULL){
+		if(*machine_code_arr[i].is_instruction == FALSE){
+			decimal_base32 = decimal_to_base32(DC);
+			strcpy(machine_code_arr[i].address, decimal_base32);
+			DC++;
+		}
+		i++;
+	}
+	free(decimal_base32);
+	
+	printf("\nmachine code:\n\n");
+	i = 0;
+	/* print all the instruction elements */
+	while(machine_code_arr[i].address != NULL){
+		if(*machine_code_arr[i].is_instruction == TRUE){
+			printf("%s %s\n\n", machine_code_arr[i].address, machine_code_arr[i].code);
+		}
+		i++;
+	}
+	
+	i = 0;
+	/* now print the data elements */
+	while(machine_code_arr[i].address != NULL){
+		if(*machine_code_arr[i].is_instruction == FALSE){
+			printf("%s %s\n\n", machine_code_arr[i].address, machine_code_arr[i].code);
+		}
+		i++;
+	}
+	
+	printf("Label List:\n");
+	print_label_list(head);
 	
 }
 
@@ -115,12 +152,11 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 	
 	char type, word[LINE_SIZE];
 	int i, wi; /*wi = word index*/
-	/*labels *head, *current;
+	int label_address;
 	
- 	head = NULL;
- 	current = NULL;*/
  	i = 0;
 	wi = 0;
+	label_address = 0;
 	
 	/*syntax_errors(line, line_num, error);*/
 	/*temporarely, for now let's assume there isn't any syntax errors..*/
@@ -156,25 +192,28 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 			if(type == 'd'){/*if the current line is a directive statement.*/
 				/*if the label does not exist in the label list, then append it to the label list*/
 				if(is_entry_label(*head, word) == LABEL_NOT_EXIST && is_extern_label(*head, word) == LABEL_NOT_EXIST){
-					append_label_node(head, current, word, *DC, FALSE, FALSE, FALSE);			
+					label_address = base32_to_decimal(machine_code_arr[*mi - 1].address) + 1;
+					append_label_node(head, current, word, label_address, FALSE, FALSE, FALSE);			
 				}
 				else if(is_entry_label(*head, word) == TRUE){
-					update_label_fields(*head, word, FALSE, TRUE, FALSE);
+					label_address = base32_to_decimal(machine_code_arr[*mi - 1].address) + 1;
+					update_label_fields(*head, word, label_address, FALSE, TRUE, FALSE);
 				}
 				else if(is_extern_label(*head, word) == TRUE){
-					update_label_fields(*head, word, TRUE, FALSE, FALSE);
+					label_address = base32_to_decimal(machine_code_arr[*mi - 1].address);
+					update_label_fields(*head, word, label_address, TRUE, FALSE, FALSE);
 				}
 			}
 			else if(type == 'i'){/*if the current line is an instruction statement.*/
 				/*if the label does not exist in the label list, then append it to the label list*/
 				if(is_entry_label(*head, word) == LABEL_NOT_EXIST && is_extern_label(*head, word) == LABEL_NOT_EXIST){
-					append_label_node(head, current, word, *DC, FALSE, FALSE, TRUE);			
+					append_label_node(head, current, word, *IC, FALSE, FALSE, TRUE);			
 				}
 				else if(is_entry_label(*head, word) == TRUE){
-					update_label_fields(*head, word, FALSE, TRUE, TRUE);
+					update_label_fields(*head, word, *IC, FALSE, TRUE, TRUE);
 				}
 				else if(is_extern_label(*head, word) == TRUE){
-					update_label_fields(*head, word, TRUE, FALSE, TRUE);
+					update_label_fields(*head, word, *IC, TRUE, FALSE, TRUE);
 				}
 			}
 			else if(type == 'x'){/*there is an error*/
@@ -198,22 +237,25 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 		
 		else if(strcmp(word, ".data") == 0){
 			/*printf("%d: It's .data!!\n", line_num);*/
-			store_data_line(line, i, machine_code_arr, mi, DC);
+			label_address = base32_to_decimal(machine_code_arr[*mi-1].address) + 1;
+			store_data_line(line, i, machine_code_arr, mi, &label_address);
 		}
 		
 		else if(strcmp(word, ".string") == 0){
 			/*printf("%d: It's .string!!\n", line_num);*/
-			store_string_line(line, i, machine_code_arr, mi, DC);
+			label_address = base32_to_decimal(machine_code_arr[*mi-1].address) + 1;
+			store_string_line(line, i, machine_code_arr, mi, &label_address);
 		}
 		
 		else if(strcmp(word, ".struct") == 0){
 			/*printf("%d: It's .struct!!\n", line_num);*/
-			store_struct_line(line, i, machine_code_arr, mi, DC);
+			label_address = base32_to_decimal(machine_code_arr[*mi-1].address) + 1;
+			store_struct_line(line, i, machine_code_arr, mi, &label_address);
 		}
 		
 		/*if there is a declaration that the label is entry*/
 		else if(strcmp(word, ".entry") == 0){
-			
+				
 			while(line[i] == ' ' || line[i] == '\t'){/* skip spaces */
 				i++;
 			}
@@ -272,7 +314,6 @@ void line_decode(char *line, int line_num, machine_code *machine_code_arr, int *
 		
 	}
 	
-	
 }
 
 
@@ -306,10 +347,13 @@ void store_instruction_line(char *line, int i, machine_code *machine_code_arr, i
 	
 	machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
-	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+	machine_code_arr[*mi].is_instruction = (int *)malloc(sizeof(int));
+	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL || machine_code_arr[*mi].is_instruction == NULL){
 		printf("\nmemory allocation failed\n");
 		exit(1);
 	}
+	
+	*(machine_code_arr[*mi].is_instruction) = TRUE;
 	
 	
 	/*saving the command binary code*/
@@ -435,7 +479,6 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 	oi = 0;/*oi = operand index*/
 	is_first_operand = TRUE;/*to differentiate between the first and second operand*/		
 	
-	
 	/*maybe I should put that inside of the loop so I can allocate memory for each word*/
 	/*machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
@@ -448,12 +491,16 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 		while(line[i] == ' ' || line[i] == '\t' || line[i] == ','){
 			i++;
 		}
+		
 		machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 		machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
-		if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+		machine_code_arr[*mi].is_instruction = (int *)malloc(sizeof(int));
+		if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL || machine_code_arr[*mi].is_instruction == NULL){
 			printf("\nmemory allocation failed\n");
 			exit(1);
 		}
+		
+		*(machine_code_arr[*mi].is_instruction) = TRUE;
 		
 		while(line[i] != ' ' && line[i] != '\t' && line[i] != '\n' && line[i] != ',' && line[i] != EOF){/*saving the operand in word*/
 			word[wi] = line[i];
@@ -589,10 +636,14 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			*mi = *mi + 1;
 			machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 			machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
-			if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+			machine_code_arr[*mi].is_instruction = (int *)malloc(sizeof(int));
+			if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL || machine_code_arr[*mi].is_instruction == NULL){
 				printf("\nmemory allocation failed\n");
 				exit(1);
 			}
+			
+			*(machine_code_arr[*mi].is_instruction) = TRUE;
+			
 			decimal_base32 = decimal_to_base32(*IC);
 			strcpy(machine_code_arr[*mi].address, decimal_base32);
 			free(decimal_base32);
@@ -644,10 +695,13 @@ void store_data_line(char *line, int i, machine_code *machine_code_arr, int *mi,
 	
     machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
-	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+	machine_code_arr[*mi].is_instruction = (int *)malloc(sizeof(int));
+	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL || machine_code_arr[*mi].is_instruction == NULL){
 		printf("\nmemory allocation failed\n");
 		exit(1);
 	}
+	
+	*(machine_code_arr[*mi].is_instruction) = FALSE;
 	
     /* Get the first token */
     token = strtok(data_expression, delimiters);
@@ -672,10 +726,13 @@ void store_data_line(char *line, int i, machine_code *machine_code_arr, int *mi,
         *mi = *mi + 1;
         machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 		machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
-		if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+		machine_code_arr[*mi].is_instruction = (int *)malloc(sizeof(int));
+		if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL || machine_code_arr[*mi].is_instruction == NULL){
 			printf("\nmemory allocation failed\n");
 			exit(1);
 		}
+		
+		*(machine_code_arr[*mi].is_instruction) = FALSE;
 		*DC = *DC + 1;
     }
     
@@ -721,10 +778,13 @@ void store_string_line(char *line, int i, machine_code *machine_code_arr, int *m
     
     machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
-	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+	machine_code_arr[*mi].is_instruction = (int *)malloc(sizeof(int));
+	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL || machine_code_arr[*mi].is_instruction == NULL){
 		printf("\nmemory allocation failed\n");
 		exit(1);
 	}
+	
+	*(machine_code_arr[*mi].is_instruction) = FALSE;
 				 
     /* Get the first token */
     token = strtok(string_expression, delimiters);
@@ -746,10 +806,13 @@ void store_string_line(char *line, int i, machine_code *machine_code_arr, int *m
         *mi = *mi + 1;
         machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 		machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
-		if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+		machine_code_arr[*mi].is_instruction = (int *)malloc(sizeof(int));
+		if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL || machine_code_arr[*mi].is_instruction == NULL){
 			printf("\nmemory allocation failed\n");
 			exit(1);
 		}
+		
+		*(machine_code_arr[*mi].is_instruction) = FALSE;
 		*DC = *DC + 1;
     }
    
@@ -805,10 +868,13 @@ void store_struct_line(char *line, int i, machine_code *machine_code_arr, int *m
     
     machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
-	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+	machine_code_arr[*mi].is_instruction = (int *)malloc(sizeof(int));
+	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL || machine_code_arr[*mi].is_instruction == NULL){
 		printf("\nmemory allocation failed\n");
 		exit(1);
 	}
+	
+	*(machine_code_arr[*mi].is_instruction) = FALSE;
 	
 	/*--- Here is the integer field ---*/
 				 
@@ -832,10 +898,13 @@ void store_struct_line(char *line, int i, machine_code *machine_code_arr, int *m
     *mi = *mi + 1;
     machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 	machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
-	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+	machine_code_arr[*mi].is_instruction = (int *)malloc(sizeof(int));
+	if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL || machine_code_arr[*mi].is_instruction == NULL){
 		printf("\nmemory allocation failed\n");
 		exit(1);
 	}
+	
+	*(machine_code_arr[*mi].is_instruction) = FALSE;
 	*DC = *DC + 1;
 	
 	/*--- Here is the string field ---*/
@@ -859,10 +928,13 @@ void store_struct_line(char *line, int i, machine_code *machine_code_arr, int *m
         *mi = *mi + 1;
         machine_code_arr[*mi].address = (char *)calloc(sizeof(char), MAX_DIGITS);
 		machine_code_arr[*mi].code = (char *)calloc(sizeof(char), MAX_DIGITS);
-		if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL){
+		machine_code_arr[*mi].is_instruction = (int *)malloc(sizeof(int));
+		if(machine_code_arr[*mi].address == NULL || machine_code_arr[*mi].code == NULL || machine_code_arr[*mi].is_instruction == NULL){
 			printf("\nmemory allocation failed\n");
 			exit(1);
 		}
+		
+		*(machine_code_arr[*mi].is_instruction) = FALSE;
 		*DC = *DC + 1;
     }
    
