@@ -3,6 +3,8 @@
 #include <string.h>
 #include "preprocessor.h"
 #include "first_pass.h"
+#include "first_pass_utility_functions.h"
+#include "second_pass.h"
 
 
 
@@ -11,12 +13,19 @@ int main(int argc, char *argv[]){
 	FILE *input_fp, *output_fp; /*fp: file pointer*/
 	char *as_file; /*as_file refers to the source file, that ends with .as*/
 	char *am_file; /*am_file refers to the new file generated after macro expantion*/
-    /*labels *head;
+	machine_code *machine_code_arr;
+	labels *head;
  	labels *current;
- 	
- 	head = NULL;
- 	current = NULL;*/
-    
+	
+	machine_code_arr = (machine_code *)calloc(MAX_DIGITS * TWO_FIELDS, RAM_SIZE);/*each element in this array has two fields:
+ 	address, and the instruction/data*/
+	if(machine_code_arr == NULL){
+		printf("\nmemory allocation failed\n");
+		exit(1);
+	}
+	
+	head = NULL;
+ 	current = NULL;
     
     
 	/*if the user didn't provide any file*/
@@ -59,7 +68,14 @@ int main(int argc, char *argv[]){
 		fclose(input_fp);
 		
 		rewind(output_fp);
-		first_pass(output_fp);
+		head = first_pass(output_fp, machine_code_arr, head, current);
+		
+		/*printf("Label List:\n");
+		print_label_list(head);
+		printf("\n\n\n\n\n");*/
+		
+		rewind(output_fp);
+		second_pass(output_fp, head);
 		
 		free(as_file);
 		free(am_file);
