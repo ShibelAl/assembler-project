@@ -206,6 +206,28 @@ int is_entry_label(labels *head, char *name){
 
 
 
+
+
+/*Parameters:
+* head: the head of a labels linked list
+* name: the name of the label (e.g. LOOP, W)
+* 
+* Returns: the address of the label name (name could be LOOP, W, and any other label name).
+*/
+int get_label_address(labels *head, char *name){
+    labels *temp = head;
+    while (temp != NULL) {
+        if (strcmp(temp->name, name) == 0) {
+            return temp->address;
+        }
+        temp = temp->next;
+    }
+    /* Return -1 if the label is not found */
+    return -1;
+}
+
+
+
 /*------------------ Implementing register_table ------------------*/
 
 registers registers_table[] = {

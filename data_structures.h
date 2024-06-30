@@ -45,6 +45,7 @@ int is_name_in_list(labels* head, char *name);
 void update_label_fields(labels *head, char *name, int address, int is_extern, int is_entry, int is_instruction);
 int is_extern_label(labels *head, char *name);
 int is_entry_label(labels *head, char *name);
+int get_label_address(labels *head, char *name);
 
 
 
