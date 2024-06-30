@@ -30,28 +30,28 @@
 /*This function receives pointer to the assembly language file after macro handling,
 it passes on the file, saves all the labels in a label table, and saves the addresses in binary
 of some, currently I decided to not return anything*/
-void first_pass(FILE *input_fp){
+labels *first_pass(FILE *input_fp, machine_code *machine_code_arr, labels *head, labels *current){
 	
 	char *line;
 	char *decimal_base32;
  	int IC, DC, line_num, error, mi, i, final_ic;
- 	machine_code *machine_code_arr;
- 	labels *head;
+ 	/*machine_code *machine_code_arr;*/
+ 	/*labels *head;
  	labels *current;
  	
  	head = NULL;
- 	current = NULL;
+ 	current = NULL;*/
  	
 	IC = 100; /* Instruction Counter */
 	DC = 0; /* Data Counter */
 	line_num = 1;
 	mi = 0; /*mi = machine_code_array index*/
 	i = 0; /*index for printing the machine code in a loop*/
-	error = FALSE; 
+	error = FALSE;
 	
 	
 	line = (char *)calloc(sizeof(char), LINE_SIZE);
-	machine_code_arr = (machine_code *)calloc(MAX_DIGITS * TWO_FIELDS, RAM_SIZE);/*each element in this array has two fields:
+	/*machine_code_arr = (machine_code *)calloc(MAX_DIGITS * TWO_FIELDS, RAM_SIZE);*//*each element in this array has two fields:
  	address, and the instruction/data*/
 	if(line == NULL || machine_code_arr == NULL){
 		printf("\nmemory allocation failed\n");
@@ -117,8 +117,10 @@ void first_pass(FILE *input_fp){
 		i++;
 	}
 	
-	printf("Label List:\n");
-	print_label_list(head);
+	/*printf("Label List:\n");
+	print_label_list(head);*/
+	
+	return head;
 	
 }
 
