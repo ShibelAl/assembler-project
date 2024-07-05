@@ -212,7 +212,8 @@ int is_entry_label(labels *head, char *name){
 * head: the head of a labels linked list
 * name: the name of the label (e.g. LOOP, W)
 * 
-* Returns: the address of the label name (name could be LOOP, W, and any other label name).
+* Returns: the address of the label name (name could be LOOP, W, and any other label name),
+* and -1 if the label is not found in the labels list.
 */
 int get_label_address(labels *head, char *name){
     labels *temp = head;
