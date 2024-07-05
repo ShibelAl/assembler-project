@@ -579,7 +579,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
 			/*saving the data (the data of the label is it's address where it's declared)*/
-			strcpy(machine_code_arr[*mi].code, "?");
+			strcpy(machine_code_arr[*mi].code, word);
 			
 			*IC = *IC + 1;
 		}
@@ -594,7 +594,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			strcpy(machine_code_arr[*mi].address, decimal_base32);	
 			free(decimal_base32);
 			
-			strcpy(machine_code_arr[*mi].code, "?");
+			strcpy(machine_code_arr[*mi].code, word);
 			
 			*IC = *IC + 1;
 			
