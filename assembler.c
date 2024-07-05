@@ -75,7 +75,7 @@ int main(int argc, char *argv[]){
 		printf("\n\n\n\n\n");*/
 		
 		rewind(output_fp);
-		second_pass(output_fp, head);
+		second_pass(output_fp, head, machine_code_arr);
 		
 		free(as_file);
 		free(am_file);
