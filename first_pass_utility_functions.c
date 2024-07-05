@@ -226,17 +226,16 @@ int operand_is_label(char *word){
 * The number decimal in base 32.
 */
 char *decimal_to_base32(int decimal){
-	
-	int index, i, j;/* i, j is for reversing a string */
+    int index, i, j; /* i, j is for reversing a string */
     char *base32_representation, temp;
     char base32_symbols[] = "!@#$%^&*<>abcdefghijklmnopqrstuv";
-    
+
     base32_representation = (char *)malloc(MAX_DIGITS * sizeof(char));
     if(base32_representation == NULL){
         printf("Memory allocation failed\n");
         exit(1);
     }
-    
+
     index = 0;
 
     do{
@@ -244,6 +243,13 @@ char *decimal_to_base32(int decimal){
         decimal /= 32;
         index++;
     } while(decimal != 0);
+
+    /* Add a leading zero if the length is less than 2 */
+    if (index < 2) {
+        base32_representation[index] = base32_symbols[0];
+        index++;
+    }
+
     base32_representation[index] = '\0';
 
     /* Reverse the string */
