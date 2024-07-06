@@ -5,7 +5,13 @@
 #include "first_pass_utility_functions.h"
 
 void second_pass(FILE *input_fp, labels *head, machine_code *machine_code_arr){
+
+	FILE *entry_file = NULL;
+    FILE *external_file = NULL;
+    FILE *object_file = NULL;
+    labels *current_label = head;
 	char *line;
+	char extern_address[LABEL_LENGTH];
 	int i, DC, final_ic;
 	char *decimal_base32;
 	i = 0;
@@ -36,13 +42,31 @@ void second_pass(FILE *input_fp, labels *head, machine_code *machine_code_arr){
 		printf("\nmemory allocation failed\n");
 		exit(1);
 	}
+	
+	/*
+	printing the label list:
+	
 	printf("\n\n ----- now it's the second pass -----\n\n\n");
 	
 	printf("Label List:\n");
 	print_label_list(head);
 	printf("\n\n\n\n\n");
+	*/
 	
-	/* itirates over the machine code array to reach the final ic */
+	
+	
+	
+	
+	
+	/* building the object file */
+	object_file = fopen("object.ob", "w");
+    if (object_file == NULL){
+        printf("Failed to open object.ob\n");
+        exit(1);
+    }
+    
+    
+    /* itirates over the machine code array to reach the final ic */
 	while(machine_code_arr[i].address != NULL){
 		if(*machine_code_arr[i].is_instruction == TRUE){
 			final_ic = base32_to_decimal(machine_code_arr[i].address);
@@ -64,12 +88,12 @@ void second_pass(FILE *input_fp, labels *head, machine_code *machine_code_arr){
 	}
 	free(decimal_base32);
 	
-	printf("\nmachine code:\n\n");
+	/*printf("\nmachine code:\n\n");*/
 	i = 0;
 	/* print all the instruction elements */
 	while(machine_code_arr[i].address != NULL){
 		if(*machine_code_arr[i].is_instruction == TRUE){
-			printf("%s %s\n\n", machine_code_arr[i].address, machine_code_arr[i].code);
+			fprintf(object_file, "%s %s\n\n", machine_code_arr[i].address, machine_code_arr[i].code);
 		}
 		i++;
 	}
@@ -78,10 +102,89 @@ void second_pass(FILE *input_fp, labels *head, machine_code *machine_code_arr){
 	/* now print the data elements */
 	while(machine_code_arr[i].address != NULL){
 		if(*machine_code_arr[i].is_instruction == FALSE){
-			printf("%s %s\n\n", machine_code_arr[i].address, machine_code_arr[i].code);
+			fprintf(object_file, "%s %s\n\n", machine_code_arr[i].address, machine_code_arr[i].code);
 		}
 		i++;
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	i = 0;
+	while (current_label != NULL){
+        if (current_label->is_entry == TRUE){
+            if(entry_file == NULL){
+                entry_file = fopen("entry.ent", "w");
+                if (entry_file == NULL){
+                    printf("Failed to open entry.ent\n");
+                    exit(1);
+                }
+            }
+            fprintf(entry_file, "%s %s\n", current_label->name, decimal_to_base32(current_label->address));
+        }
+        if (current_label->is_extern == TRUE){
+            if (external_file == NULL){
+                external_file = fopen("external.ext", "w");
+                if (external_file == NULL) {
+                    printf("Failed to open external.ext\n");
+                    exit(1);
+                }
+            }
+            i = 0;
+            while(machine_code_arr[i].address != NULL){
+            	/* the code of an extern label is always !@ because its binary code is 0000000001 
+            	so this if statement checks if the current code is of an extern label*/
+            	
+				if(machine_code_arr[i].label != NULL && strcmp(machine_code_arr[i].label, current_label->name) == 0){
+					strcpy(extern_address, machine_code_arr[i].address);
+					fprintf(external_file, "%s %s\n", current_label->name, extern_address);
+				}
+				i++;
+			}
+            i = 0;
+        }
+        current_label = current_label->next;
+    }
+
+    /* Close the entry.ent file if it was opened */
+    if(entry_file != NULL){
+        fclose(entry_file);
+    }
+
+    /* Close the external.ext file if it was opened */
+    if(external_file != NULL){
+        fclose(external_file);
+    }
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	/*i = 0;
+	while(labels[i].name != NULL){
+		if(labels[i].is_entry = TRUE){
+		
+		}
+		entry_file = fopen("entry.ent", "w");
+		if (entry_file == NULL) {
+		    printf("Failed to open entry.ent\n");
+		    exit(1);
+		}
+	}*/
 	
 	
 	/*fgets(line, LINE_SIZE, input_fp);
