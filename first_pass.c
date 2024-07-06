@@ -33,20 +33,12 @@ of some, currently I decided to not return anything*/
 labels *first_pass(FILE *input_fp, machine_code *machine_code_arr, labels *head, labels *current){
 	
 	char *line;
-	char *decimal_base32;
- 	int IC, DC, line_num, error, mi, i, final_ic;
- 	/*machine_code *machine_code_arr;*/
- 	/*labels *head;
- 	labels *current;
- 	
- 	head = NULL;
- 	current = NULL;*/
+ 	int IC, DC, line_num, error, mi;
  	
 	IC = 100; /* Instruction Counter */
 	DC = 0; /* Data Counter */
 	line_num = 1;
 	mi = 0; /*mi = machine_code_array index*/
-	i = 0; /*index for printing the machine code in a loop*/
 	error = FALSE;
 	
 	
