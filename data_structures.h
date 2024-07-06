@@ -102,12 +102,15 @@ extern addresses address;
 /*GOAL: this is what will be printed in the end of the program.
 * the first column is the addresses of the words
 * the second column is the actual code that the computer has to execute.
+* the third column will contain TRUE if the current word is in instruction or not (data)
+* the forth column will contain the label (if there is a label in the line)
 */
 typedef struct address_code_table{
 	
 	char *address;
 	char *code;
 	int *is_instruction;
+	char *label;
 	
 }machine_code;
 

@@ -76,50 +76,6 @@ labels *first_pass(FILE *input_fp, machine_code *machine_code_arr, labels *head,
 		line_num++;
 	}
 	
-	/* itirates over the machine code array to reach the final ic */
-	while(machine_code_arr[i].address != NULL){
-		if(*machine_code_arr[i].is_instruction == TRUE){
-			final_ic = base32_to_decimal(machine_code_arr[i].address);
-		}
-		i++;
-	}
-	
-	i = 0;
-	DC = final_ic + 1;
-	/* Updating the DC. For each element in the array that is data element (not in instruction line)
-	put the new DC, that starts from final_ic, to make the data after the instructions. */
-	while(machine_code_arr[i].address != NULL){
-		if(*machine_code_arr[i].is_instruction == FALSE){
-			decimal_base32 = decimal_to_base32(DC);
-			strcpy(machine_code_arr[i].address, decimal_base32);
-			DC++;
-		}
-		i++;
-	}
-	free(decimal_base32);
-	
-	printf("\nmachine code:\n\n");
-	i = 0;
-	/* print all the instruction elements */
-	while(machine_code_arr[i].address != NULL){
-		if(*machine_code_arr[i].is_instruction == TRUE){
-			printf("%s %s\n\n", machine_code_arr[i].address, machine_code_arr[i].code);
-		}
-		i++;
-	}
-	
-	i = 0;
-	/* now print the data elements */
-	while(machine_code_arr[i].address != NULL){
-		if(*machine_code_arr[i].is_instruction == FALSE){
-			printf("%s %s\n\n", machine_code_arr[i].address, machine_code_arr[i].code);
-		}
-		i++;
-	}
-	
-	/*printf("Label List:\n");
-	print_label_list(head);*/
-	
 	return head;
 	
 }
@@ -571,6 +527,11 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 		}
 		
 		else if(operand_is_label(word)){/*Direct addressing*/
+			machine_code_arr[*mi].label = (char *)malloc(LABEL_LENGTH);
+			if(machine_code_arr[*mi].label == NULL){
+				printf("\nmemory allocation failed\n");
+				exit(1);
+			}
 			is_first_operand = FALSE;/*I put this so if a register comes after this operand, I know how to 
 			encode his data, because if a register comes as the first operand it is different than when it
 			comes as the second operand, so it's a register thing..*/
@@ -580,7 +541,7 @@ void store_instruction_line_operands(char *line, int i, machine_code *machine_co
 			free(decimal_base32);
 			/*saving the data (the data of the label is it's address where it's declared)*/
 			strcpy(machine_code_arr[*mi].code, word);
-			
+			strcpy(machine_code_arr[*mi].label, word);
 			*IC = *IC + 1;
 		}
 		
