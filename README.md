@@ -29,7 +29,7 @@ The assembler will generate output files with the same filenames and the followi
 - `.ent` - Entries file
 - `.ext` - Externals file
 
-An example of input and output files can be found under the 'tests' folder.
+An example of input and output files can be found under the 'example_assembly_files' folder.
 
 ## Hardware
 - CPU
