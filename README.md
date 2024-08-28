@@ -6,7 +6,10 @@ This project is based on the **_two-pass assembler_** model.
 
 ## Getting Started
 
-The project was coded and compiled using Ubuntu, but it may run on all Linux versions.
+In this project, I developed an assembler for an imaginary assembly language within a Linux virtual machine using the C programming language. 
+The translation started by running a pre-assembler to handle macros in the assembly-like input file, followed by two file passes to fill labels table and make output files.
+
+The project was coded and compiled in Ubuntu using GCC, but it may run on all Linux versions.
 
 ### Usage
 
