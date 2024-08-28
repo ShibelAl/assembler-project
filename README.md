@@ -32,7 +32,6 @@ An example of input and output files can be found under the 'tests' folder.
 - CPU
 - RAM (including a stack), with the size of 256 *words*.
 - A *word*'s size in memory is **10 bits**.
-- Uses signed *2's complement* arithmetic for integers (with no support for real numbers).
 
    ### Registers
    The CPU has 9 registers: 8 general registers (named r1,r2,...,r8) and a register called *PSW* (program status word).  
